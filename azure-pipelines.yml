@@ -33,18 +33,8 @@ jobs:
     vmImage: ubuntu-18.04
   strategy:
     matrix:
-      servers:
-        CI_JOB: test
-        CI_JOB_ARGS: servers
-      chain/core/keychain:
-        CI_JOB: test
-        CI_JOB_ARGS: chain core keychain
-      pool/p2p/src:
-        CI_JOB: test
-        CI_JOB_ARGS: pool p2p src
-      api/util/store:
-        CI_JOB: test
-        CI_JOB_ARGS: api util store
+      test:
+        CI_JOB: test-all
       release:
         CI_JOB: release
         PLATFORM: linux-amd64
