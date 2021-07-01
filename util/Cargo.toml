@@ -11,12 +11,12 @@ edition = "2018"
 
 [dependencies]
 
-# grin_core = { git = "https://github.com/bitcoinmw/bitcoinmw", tag = "v5.0.0-beta.2"}
-# grin_keychain = { git = "https://github.com/bitcoinmw/bitcoinmw", tag = "v5.0.0-beta.2" }
-# grin_chain = { git = "https://github.com/bitcoinmw/bitcoinmw", tag = "v5.0.0-beta.2" }
-# grin_util = { git = "https://github.com/bitcoinmw/bitcoinmw", tag = "v5.0.0-beta.2" }
-# grin_api = { git = "https://github.com/bitcoinmw/bitcoinmw", tag = "v5.0.0-beta.2" }
-# grin_store = { git = "https://github.com/bitcoinmw/bitcoinmw", tag = "v5.0.0-beta.2" }
+grin_core = { git = "https://github.com/bitcoinmw/bitcoinmw", tag = "v0.0.1"}
+grin_keychain = { git = "https://github.com/bitcoinmw/bitcoinmw", tag = "v0.0.1"}
+grin_chain = { git = "https://github.com/bitcoinmw/bitcoinmw", tag = "v0.0.1"}
+grin_util = { git = "https://github.com/bitcoinmw/bitcoinmw", tag = "v0.0.1"}
+grin_api = { git = "https://github.com/bitcoinmw/bitcoinmw", tag = "v0.0.1"}
+grin_store = { git = "https://github.com/bitcoinmw/bitcoinmw", tag = "v0.0.1"}
 
 
 # For bleeding edge
@@ -28,9 +28,9 @@ edition = "2018"
 #grin_store = { git = "https://github.com/bitcoinmw/bitcoinmw", branch = "master" }
 
 # For local testing
-grin_core = { path = "../../bitcoinmw/core"}
-grin_keychain = { path = "../../bitcoinmw/keychain"}
-grin_chain = { path = "../../bitcoinmw/chain"}
-grin_util = { path = "../../bitcoinmw/util"}
-grin_api = { path = "../../bitcoinmw/api"}
-grin_store = { path = "../../bitcoinmw/store"}
+#grin_core = { path = "../../bitcoinmw/core"}
+#grin_keychain = { path = "../../bitcoinmw/keychain"}
+#grin_chain = { path = "../../bitcoinmw/chain"}
+#grin_util = { path = "../../bitcoinmw/util"}
+#grin_api = { path = "../../bitcoinmw/api"}
+#grin_store = { path = "../../bitcoinmw/store"}
