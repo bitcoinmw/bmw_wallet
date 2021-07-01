@@ -18,7 +18,7 @@ steps:
     condition:  and(succeeded(), contains(variables['Build.SourceBranch'], 'refs/tags/'), eq(variables['CI_JOB'], 'release' ))
     inputs:
       sourceFolder: '$(Build.SourcesDirectory)/target/release'
-      contents: 'bmw'
+      contents: 'bmw-wallet'
       targetFolder: '$(Build.BinariesDirectory)/bmw_wallet'
   - task: ArchiveFiles@2
     displayName: Gather assets
