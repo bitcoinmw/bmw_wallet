@@ -1,0 +1,38 @@
+[package]
+name = "bmw_wallet_impls"
+version = "0.0.1"
+authors = ["BMW Developers"]
+description = "BMW Wallet API"
+license = "Apache-2.0"
+repository = "https://github.com/bitcoinmw/bmw-wallet"
+keywords = [ "crypto", "bmw", "mimblewimble" ]
+exclude = ["**/*.bmw", "**/*.bmw2"]
+edition = "2018"
+
+[dependencies]
+rand = "0.6"
+blake2-rfc = "0.2"
+ring = "0.16"
+hex = "0.4.2"
+colored = "2.0.0"
+byteorder = { version = "1.4.2" }
+base64 = "0.9"
+hyper = "0.13"
+hyper-rustls = "0.20"
+hyper-timeout = "0.3"
+hyper-socks2-mw = "0.4"
+tokio = { version = "0.2", features = ["full"] }
+failure = "0.1"
+lazy_static = "1.4"
+failure_derive = "0.1"
+serde = "1.0.111"
+serde_derive = "1.0.111"
+serde_json = "1"
+futures = "0.3"
+dirs = "2.0"
+log = "0.4"
+bitcoin = { git = "https://github.com/bitcoinmw/rust-bitcoin"}
+
+bmw_wallet_util      = { path = "../util"      }
+bmw_wallet_libwallet = { path = "../libwallet" }
+bmw_wallet_config    = { path = "../config"    }

@@ -1,0 +1,18 @@
+[package]
+name = "bmw_wallet_api"
+version = "0.0.1"
+authors = ["BMW Developers"]
+description = "BMW Wallet API"
+license = "Apache-2.0"
+repository = "https://github.com/bitcoinmw/bmw-wallet"
+keywords = [ "crypto", "bmw", "mimblewimble" ]
+exclude = ["**/*.bmw", "**/*.bmw2"]
+edition = "2018"
+
+[dependencies]
+
+bmw_wallet_libwallet = { path = "../libwallet", version = "0.0.1" }
+bmw_wallet_config = { path = "../config", version = "0.0.1" }
+bmw_wallet_impls = { path = "../impls", version = "0.0.1" }
+bmw_wallet_util = { path = "../util", version = "0.0.1" }
+

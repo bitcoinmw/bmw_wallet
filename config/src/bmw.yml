@@ -1,0 +1,212 @@
+name: bmw-wallet
+about: Reference BMW Wallet
+author: The BMW Developers
+
+args:
+  - testnet:
+      help: Run bmw against the Testnet (as opposed to mainnet)
+      long: testnet
+      takes_value: false
+  - pass:
+      help: Wallet passphrase used to encrypt wallet seed
+      short: p
+      long: pass
+      takes_value: true
+  - account:
+      help: Wallet account to use for this operation
+      short: a
+      long: account
+      takes_value: true
+      default_value: default
+  - top_level_dir:
+      help: Top directory in which wallet files are stored (location of 'bmw-wallet.toml')
+      short: t
+      long: top_level_dir
+      takes_value: true
+subcommands:
+  - cli:
+      about: Start the wallet in interactive CLI mode
+  - account:
+      about: List wallet accounts or create a new account
+      args:
+        - create:
+            help: Create a new wallet account with provided name
+            short: c
+            long: create
+            takes_value: true
+  - cancel:
+      about: Cancel a transaction. Note that this does not ensure the transaction will not be later confirmed since it was sent to a node
+      args:
+        - id:
+            help: the id of the transaction to cancel
+            index: 1
+  - api:
+      about: Runs the wallet's local web API
+      args:
+        - port:
+            help: Port on which to run the wallet owner listener
+            short: l
+            long: port
+            takes_value: true
+  - send:
+      about: Sends coins to the specified address
+      args:
+        - amount:
+            help: Number of coins to send with optional fraction, e.g. 12.423
+            index: 1
+        - address:
+            help: Intended recipient's Address
+            index: 2
+        - selection_strategy:
+            help: Coin/Output selection strategy.
+            short: s
+            long: selection
+            possible_values:
+              - all
+              - smallest
+            default_value: smallest
+            takes_value: true
+        - change_outputs:
+            help: Number of change outputs to generate
+            short: o
+            long: change_outputs
+            default_value: "1"
+            takes_value: true
+        - fluff:
+            help: Fluff the transaction (ignore Dandelion relay protocol)
+            short: f
+            long: fluff
+        - stored_tx:
+            help: If present, use the previously stored Unconfirmed transaction with given id
+            short: t
+            long: stored_tx
+            takes_value: true
+  - invoice:
+      about: Invoice a specified amount for payment via lightning network (Not implemented yet)
+      args:
+        - amount:
+            help: Number of coins to invoice  with optional fraction, e.g. 12.423
+            index: 1
+  - pay:
+      about: Spend coins to pay the provided invoice via lightning network (Not implemented yet)
+      args:
+        - selection_strategy:
+            help: Coin/Output selection strategy.
+            short: s
+            long: selection
+            possible_values:
+              - all
+              - smallest
+            default_value: smallest
+            takes_value: true
+        - input:
+            help: Invoice to pay 
+            short: i
+            long: input
+            takes_value: true
+  - outputs:
+      about: Raw wallet output info (list of outputs)
+      args:
+        - show_spent:
+            help: Show spent outputs on wallet output commands
+            short: s
+            long: show_spent
+            takes_value: false
+  - txs:
+      about: Display transaction information
+      args:
+        - id:
+            help: If specified, display transaction with given Id and all associated Inputs/Outputs
+            short: i
+            long: id
+            takes_value: true
+        - paymentid:
+            help: If specified, display transaction with given PaymentID and all associated Inputs/Outputs
+            short: p
+            long: paymentid
+            takes_value: true
+  - burn:
+      about: Burn the specified amount of BMW
+      args:
+        - fluff:
+           help: Fluff the transaction (ignore Dandelion relay protocol)
+           short: f
+           long: fluff
+        - selection_strategy:
+            help: Coin/Output selection strategy.
+            short: s
+            long: selection
+            possible_values:
+              - all
+              - smallest
+            default_value: smallest
+            takes_value: true
+        - change_outputs:
+            help: Number of change outputs to generate (mainly for testing)
+            short: o
+            long: change_outputs
+            default_value: "1"
+            takes_value: true
+        - amount:
+           help: amount to burn
+           index: 1
+  - claim:
+      about: Claim BMW from BTC snapshot
+      args:
+        - address:
+           help: BTC Address to claim
+           index: 1
+        - fluff:
+           help: Fluff the transaction (ignore Dandelion relay protocol)
+           short: f
+           long: fluff
+        - redeem_script:
+           help: Optional redeem script for bip16 style claims
+           short: r
+           long: redeem
+           takes_value: true
+        - address_type:
+           help: Optional address type hint. P2SH = 0, P2WSH = 1, P2SHWSH = 2, P2PKH = 3, P2SHWPKH = 4, P2WPKH = 5
+           short: a
+           long: atype
+  - info:
+      about: Basic wallet contents summary
+  - init:
+      about: Initialize a new wallet seed file and database
+      args:
+        - here:
+            help: Create wallet files in the current directory instead of the default ~/.bmw directory
+            short: h
+            long: here
+            takes_value: false
+        - recover:
+            help: Initialize new wallet using a recovery phrase
+            short: r
+            long: recover
+            takes_value: false
+  - backup:
+      about: Displays a recovery phrase for the wallet
+  - address:
+      about: Display the wallet's address
+  - export_proof:
+      about: Export a payment proof from a completed transaction
+      args:
+          - output:
+              help: Output proof file
+              index: 1
+          - id:
+              help: If specified, retrieve the proof for the given transaction ID
+              short: i
+              long: id
+              takes_value: true
+          - txid:
+              help: If specified, retrieve the proof for the given Slate ID
+              short: t
+              long: txid
+              takes_value: true
+  - verify_proof:
+      about: Verify a payment proof
+      args:
+          - input:
+              help: Filename of a proof file
+              index: 1

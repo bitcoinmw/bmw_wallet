@@ -1,0 +1,36 @@
+[package]
+name = "bmw_wallet_util"
+version = "0.0.1"
+authors = ["BMW Developers"]
+description = "BMW Wallet API"
+license = "Apache-2.0"
+repository = "https://github.com/bitcoinmw/bmw-wallet"
+keywords = [ "crypto", "bmw", "mimblewimble" ]
+exclude = ["**/*.bmw", "**/*.bmw2"]
+edition = "2018"
+
+[dependencies]
+
+# grin_core = { git = "https://github.com/bitcoinmw/bitcoinmw", tag = "v5.0.0-beta.2"}
+# grin_keychain = { git = "https://github.com/bitcoinmw/bitcoinmw", tag = "v5.0.0-beta.2" }
+# grin_chain = { git = "https://github.com/bitcoinmw/bitcoinmw", tag = "v5.0.0-beta.2" }
+# grin_util = { git = "https://github.com/bitcoinmw/bitcoinmw", tag = "v5.0.0-beta.2" }
+# grin_api = { git = "https://github.com/bitcoinmw/bitcoinmw", tag = "v5.0.0-beta.2" }
+# grin_store = { git = "https://github.com/bitcoinmw/bitcoinmw", tag = "v5.0.0-beta.2" }
+
+
+# For bleeding edge
+#grin_core = { git = "https://github.com/bitcoinmw/bitcoinmw", branch = "master" }
+#grin_keychain = { git = "https://github.com/bitcoinmw/bitcoinmw", branch = "master" }
+#grin_chain = { git = "https://github.com/bitcoinmw/bitcoinmw", branch = "master" }
+#grin_util = { git = "https://github.com/bitcoinmw/bitcoinmw", branch = "master" }
+#grin_api = { git = "https://github.com/bitcoinmw/bitcoinmw", branch = "master" }
+#grin_store = { git = "https://github.com/bitcoinmw/bitcoinmw", branch = "master" }
+
+# For local testing
+grin_core = { path = "../../bitcoinmw/core"}
+grin_keychain = { path = "../../bitcoinmw/keychain"}
+grin_chain = { path = "../../bitcoinmw/chain"}
+grin_util = { path = "../../bitcoinmw/util"}
+grin_api = { path = "../../bitcoinmw/api"}
+grin_store = { path = "../../bitcoinmw/store"}
