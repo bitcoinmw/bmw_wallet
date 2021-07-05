@@ -151,6 +151,18 @@ fn test_address() {
 	let init_resp = wallet.init(&config, "").unwrap();
 	assert_eq!(init_resp.get_mnemonic().is_ok(), true);
 
+	let config = build_config(test_dir, None, None);
+	let address_response = wallet.address(&config, "").unwrap();
+	assert_eq!(address_response.get_address().is_ok(), true);
+}
+
+#[test]
+fn test_info() {
+	let test_dir = ".bmw_wallet_info";
+	clean_output_dir(test_dir);
+	global::set_local_chain_type(global::ChainTypes::UserTesting);
+
+	let mut wallet = get_wallet_instance();
 	let config = build_config(
 		test_dir,
 		Some(InitArgs {
@@ -160,6 +172,38 @@ fn test_address() {
 		}),
 		None,
 	);
-	let address_response = wallet.address(&config, "").unwrap();
-	assert_eq!(address_response.get_address().is_ok(), true);
+	let init_resp = wallet.init(&config, "").unwrap();
+	assert_eq!(init_resp.get_mnemonic().is_ok(), true);
+
+	let config = build_config(test_dir, None, None);
+	let info_response = wallet.info(&config, "").unwrap();
+	assert_eq!(info_response.get_output_count().unwrap(), 0);
+	assert_eq!(info_response.get_height().unwrap(), 0);
+	assert_eq!(info_response.get_balance().unwrap(), 0.0);
+	assert_eq!(info_response.get_spendable().unwrap(), 0.0);
+}
+
+#[test]
+fn test_txs() {
+	let test_dir = ".bmw_wallet_txs";
+	clean_output_dir(test_dir);
+	global::set_local_chain_type(global::ChainTypes::UserTesting);
+
+	let mut wallet = get_wallet_instance();
+	let config = build_config(
+		test_dir,
+		Some(InitArgs {
+			here: true,
+			recover: false,
+			recover_phrase: None,
+		}),
+		None,
+	);
+	let init_resp = wallet.init(&config, "").unwrap();
+	assert_eq!(init_resp.get_mnemonic().is_ok(), true);
+
+	let config = build_config(test_dir, None, None);
+	let txs_response = wallet.txs(&config, "");
+	// TODO: fix, shouldn't be an error
+	assert_eq!(txs_response.is_err(), true);
 }
