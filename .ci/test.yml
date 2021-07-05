@@ -6,6 +6,6 @@ steps:
   - script: 'cargo test --all'
     displayName: macOS Cargo Test
     condition: and(eq( variables['Agent.OS'], 'Darwin' ), eq( variables['CI_JOB'], 'test-all' ))
-  - script: '.ci/general-jobs'
+  - script: 'cargo test --all'
     displayName: Linux Cargo Test
-    condition: eq( variables['Agent.OS'], 'Linux' )
+    condition: and(eq( variables['Agent.OS'], 'Linux' ), eq( variables['CI_JOB'], 'test-all' ))
