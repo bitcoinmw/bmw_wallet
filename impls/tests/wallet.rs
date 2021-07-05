@@ -131,3 +131,35 @@ fn test_account() {
 	clean_output_dir(test_dir);
 	assert!(true);
 }
+
+#[test]
+fn test_address() {
+	let test_dir = ".bmw_wallet_address";
+	clean_output_dir(test_dir);
+	global::set_local_chain_type(global::ChainTypes::UserTesting);
+
+	let mut wallet = get_wallet_instance();
+	let config = build_config(
+		test_dir,
+		Some(InitArgs {
+			here: true,
+			recover: false,
+			recover_phrase: None,
+		}),
+		None,
+	);
+	let init_resp = wallet.init(&config, "").unwrap();
+	assert_eq!(init_resp.get_mnemonic().is_ok(), true);
+
+	let config = build_config(
+		test_dir,
+		Some(InitArgs {
+			here: true,
+			recover: false,
+			recover_phrase: None,
+		}),
+		None,
+	);
+	let address_response = wallet.address(&config, "").unwrap();
+	assert_eq!(address_response.get_address().is_ok(), true);
+}
