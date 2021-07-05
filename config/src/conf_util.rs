@@ -79,3 +79,49 @@ pub fn get_bmw_path(
 		Ok(())
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use crate::conf_util::get_data_dir_name;
+	use crate::conf_util::BMW_HOME;
+	use crate::config::WalletConfig;
+	use bmw_wallet_util::grin_core::global::ChainTypes;
+	use std::path::PathBuf;
+	#[test]
+	fn test_get_data_dir_name() {
+		let config = WalletConfig {
+			version: "v1".to_string(),
+			chain_type: ChainTypes::Mainnet,
+			current_dir: None,
+			create_path: false,
+			sub_command: "account".to_string(),
+			account: "default".to_string(),
+			node: "".to_string(),
+			node_api_secret: None,
+			init_args: None,
+			outputs_args: None,
+			send_args: None,
+			burn_args: None,
+			claim_args: None,
+			cancel_args: None,
+			account_args: None,
+			txs_args: None,
+			pass: None,
+		};
+		let res = get_data_dir_name(&config);
+		assert_eq!(get_data_dir_name(&config).is_ok(), true);
+		let mut path = PathBuf::new();
+		path.push(
+			dirs::home_dir()
+				.unwrap()
+				.into_os_string()
+				.into_string()
+				.unwrap(),
+		);
+		path.push(BMW_HOME);
+		path.push("main/wallet_data".to_string());
+		let mut path2 = PathBuf::new();
+		path2.push(res.unwrap());
+		assert_eq!(path, path2);
+	}
+}
