@@ -14,6 +14,7 @@
 
 //! Wallet tests
 
+use bmw_wallet_config::config::AccountArgs;
 use bmw_wallet_config::config::InitArgs;
 use bmw_wallet_config::config::WalletConfig;
 use bmw_wallet_impls::wallet::Wallet;
@@ -30,7 +31,11 @@ fn get_wallet_instance() -> Wallet {
 	Wallet::new().unwrap()
 }
 
-fn build_config(dir: &str) -> WalletConfig {
+fn build_config(
+	dir: &str,
+	init_args: Option<InitArgs>,
+	account_args: Option<AccountArgs>,
+) -> WalletConfig {
 	let mut path = PathBuf::new();
 	path.push(dir);
 	let config = WalletConfig {
@@ -42,17 +47,13 @@ fn build_config(dir: &str) -> WalletConfig {
 		account: "default".to_string(),
 		node: "".to_string(),
 		node_api_secret: None,
-		init_args: Some(InitArgs {
-			here: true,
-			recover: false,
-			recover_phrase: None,
-		}),
+		init_args,
 		outputs_args: None,
 		send_args: None,
 		burn_args: None,
 		claim_args: None,
 		cancel_args: None,
-		account_args: None,
+		account_args,
 		txs_args: None,
 		pass: None,
 	};
@@ -61,14 +62,71 @@ fn build_config(dir: &str) -> WalletConfig {
 
 #[test]
 fn test_init() {
-	let test_dir = ".bmw_wallet_test";
+	let test_dir = ".bmw_wallet_init";
 	clean_output_dir(test_dir);
 	global::set_local_chain_type(global::ChainTypes::UserTesting);
 
 	let mut wallet = get_wallet_instance();
-	let config = build_config(test_dir);
+	let config = build_config(
+		test_dir,
+		Some(InitArgs {
+			here: true,
+			recover: false,
+			recover_phrase: None,
+		}),
+		None,
+	);
 	let res = wallet.init(&config, "").unwrap();
 	assert_eq!(res.get_mnemonic().is_ok(), true);
+
+	clean_output_dir(test_dir);
+	assert!(true);
+}
+
+#[test]
+fn test_account() {
+	let test_dir = ".bmw_wallet_account";
+	clean_output_dir(test_dir);
+	global::set_local_chain_type(global::ChainTypes::UserTesting);
+
+	let mut wallet = get_wallet_instance();
+	let config = build_config(
+		test_dir,
+		Some(InitArgs {
+			here: true,
+			recover: false,
+			recover_phrase: None,
+		}),
+		None,
+	);
+	let init_resp = wallet.init(&config, "").unwrap();
+	assert_eq!(init_resp.get_mnemonic().is_ok(), true);
+
+	let config = build_config(test_dir, None, Some(AccountArgs { create: None }));
+	let account_resp = wallet.account(&config, "").unwrap();
+	// no accounts created
+	assert_eq!(account_resp.created().unwrap().is_some(), false);
+	// just default account
+	assert_eq!(account_resp.accounts().unwrap().len(), 1);
+
+	// create an account
+	let config = build_config(
+		test_dir,
+		None,
+		Some(AccountArgs {
+			create: Some("test".to_string()),
+		}),
+	);
+
+	let account_resp = wallet.account(&config, "").unwrap();
+	let created_info = account_resp.created().unwrap().as_ref().unwrap();
+	assert_eq!(created_info.name, "test".to_string());
+	assert_eq!(created_info.index, 1);
+
+	let account_info = account_resp.accounts().unwrap();
+	assert_eq!(account_info.len(), 2);
+	assert_eq!(account_info[0].name, "default");
+	assert_eq!(account_info[1].name, "test");
 
 	clean_output_dir(test_dir);
 	assert!(true);
