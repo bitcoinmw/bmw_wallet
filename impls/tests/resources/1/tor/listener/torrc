@@ -1,6 +1,6 @@
 SocksPort 127.0.0.1:23497
 DataDirectory ./data
-HiddenServiceDir ./onion_service_addresses/6r2ig5khdopsr4tja63gwlv7jb6jewiwcmfh572xavxsnwlueshnmsqd
+HiddenServiceDir ./onion_service_addresses/dwky242dmv7lo5bpmz4wkzw4mdmok2bschtyqjtwkq6wscbwgrulczad
 HiddenServiceVersion 3
 HiddenServicePort 80 0.0.0.0:23494
 HiddenServicePort 8080 127.0.0.1:23493
