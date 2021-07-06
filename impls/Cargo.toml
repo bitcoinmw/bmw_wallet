@@ -15,6 +15,7 @@ blake2-rfc = "0.2"
 ring = "0.16"
 hex = "0.4.2"
 colored = "2.0.0"
+chrono = "0.4.11"
 byteorder = { version = "1.4.2" }
 base64 = "0.9"
 hyper = "0.13"
@@ -32,6 +33,7 @@ futures = "0.3"
 dirs = "2.0"
 log = "0.4"
 bitcoin = { git = "https://github.com/bitcoinmw/rust-bitcoin"}
+ctrlc = { version = "3.1", features = ["termination"] }
 
 bmw_wallet_util      = { path = "../util"      }
 bmw_wallet_libwallet = { path = "../libwallet" }

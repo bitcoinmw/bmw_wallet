@@ -1,0 +1,48 @@
+# Tor state file last generated on 2021-07-06 12:16:21 local time
+# Other times below are in UTC
+# You *do not* need to edit this file.
+
+CircuitBuildTimeBin 575 1
+CircuitBuildTimeBin 625 12
+CircuitBuildTimeBin 675 31
+CircuitBuildTimeBin 725 53
+CircuitBuildTimeBin 775 26
+CircuitBuildTimeBin 825 26
+CircuitBuildTimeBin 875 29
+CircuitBuildTimeBin 925 24
+CircuitBuildTimeBin 975 19
+CircuitBuildTimeBin 1025 17
+CircuitBuildTimeBin 1075 12
+CircuitBuildTimeBin 1125 13
+CircuitBuildTimeBin 1175 2
+CircuitBuildTimeBin 1225 4
+CircuitBuildTimeBin 1275 1
+CircuitBuildTimeBin 1325 2
+CircuitBuildTimeBin 1425 3
+CircuitBuildTimeBin 1725 1
+CircuitBuildTimeBin 2125 1
+CircuitBuildTimeBin 34725 1
+Dormant 0
+Guard in=default rsa_id=1FC4D7C6D3CAA8992E8F47404017CEB6D3C01AB8 nickname=PowerRelay2 sampled_on=2021-06-28T00:11:48 sampled_by=0.4.3.5 listed=1
+Guard in=default rsa_id=9288B75B5FF8861EFF32A6BE8825CC38A4F9F8C2 nickname=rinderwahnRelay9L sampled_on=2021-07-06T09:20:57 sampled_by=0.4.3.5 listed=1
+Guard in=default rsa_id=32ED1B555FB140D6DB9BF1AFF81C2B66B321D2A8 nickname=Spiegelberg sampled_on=2021-06-29T06:14:22 sampled_by=0.4.3.5 listed=1
+Guard in=default rsa_id=D56A98D38FC3C75E0347EEF3DD9C12749AF7C7C5 nickname=sTORch sampled_on=2021-06-29T10:12:53 sampled_by=0.4.3.5 listed=1
+Guard in=default rsa_id=FDA888A3E71C343E3430B604E04099839CB991B6 nickname=dred sampled_on=2021-07-03T19:31:05 sampled_by=0.4.3.5 listed=1
+Guard in=default rsa_id=8F280E6E83F155D79173EA6658B8A17420657922 nickname=Unnamed sampled_on=2021-07-05T11:03:44 sampled_by=0.4.3.5 listed=1
+Guard in=default rsa_id=5D765770B4DB110D88787457978AB4008CF65CAC nickname=Fission07 sampled_on=2021-07-03T23:44:14 sampled_by=0.4.3.5 listed=1
+Guard in=default rsa_id=1DC17C4A52A458B5C8B1E79157F8665696210E10 nickname=kraghtorn sampled_on=2021-06-29T09:01:10 sampled_by=0.4.3.5 listed=1
+Guard in=default rsa_id=C8AAADD3FD1470E7D60D8BC4500F95825F35057D nickname=Lux4 sampled_on=2021-07-01T10:31:22 sampled_by=0.4.3.5 listed=1
+Guard in=default rsa_id=0258BDAE9B351714B0BCC0DABE1D798D662EBA88 nickname=howlin sampled_on=2021-07-02T13:00:05 sampled_by=0.4.3.5 listed=1
+Guard in=default rsa_id=40DD356E8F3C53FA9251B561CF956302791AAFF5 nickname=Unnamed sampled_on=2021-06-29T18:27:14 sampled_by=0.4.3.5 listed=1
+Guard in=default rsa_id=CA45F54BD5C2158EE2E64C9433585EDC84B0E142 nickname=DTFNODE40 sampled_on=2021-07-05T18:20:38 sampled_by=0.4.3.5 listed=1 confirmed_on=2021-07-02T17:29:34 confirmed_idx=1 pb_circ_attempts=1.000000 pb_circ_successes=1.000000 pb_successful_circuits_closed=1.000000
+Guard in=default rsa_id=C2A553E4811209F0C085BD2B4C4AE05E05EED184 nickname=Unnamed sampled_on=2021-07-01T02:15:29 sampled_by=0.4.3.5 listed=1
+Guard in=default rsa_id=B56B9FE93F83B4FA69234B17A060E8A8E7446D19 nickname=Paphos sampled_on=2021-07-04T23:17:07 sampled_by=0.4.3.5 listed=1
+Guard in=default rsa_id=AE6A8C18E7499B586CD36246AC4BCAFFBBF93AB2 nickname=Doedel21 sampled_on=2021-06-28T14:16:10 sampled_by=0.4.3.5 listed=1
+Guard in=default rsa_id=42D47C736518BFA495CA31AEE40AE468F0BDA2A6 nickname=kimjongun sampled_on=2021-06-26T02:49:49 sampled_by=0.4.3.5 listed=1
+Guard in=default rsa_id=B0F9BA27944FA59E3B1A182208FF7C0CFF5497B2 nickname=NeelTorRelayA sampled_on=2021-07-04T19:53:12 sampled_by=0.4.3.5 listed=1
+Guard in=default rsa_id=99339F3E68BCCC1391BF14C821D80766FE0C5956 nickname=Unnamed sampled_on=2021-07-06T14:26:57 sampled_by=0.4.3.5 listed=1
+Guard in=default rsa_id=00B57BF614F7ED3051073B5D4526FF0B23AF217B nickname=mharelay sampled_on=2021-07-01T16:01:30 sampled_by=0.4.3.5 listed=1 confirmed_on=2021-07-05T22:25:48 confirmed_idx=0 pb_use_attempts=65.500000 pb_use_successes=65.500000 pb_circ_attempts=282.000000 pb_circ_successes=275.000000 pb_successful_circuits_closed=275.000000 pb_timeouts=2.000000
+Guard in=default rsa_id=E69DB461CD0AF1C90936EBB544672AFBC2563D2C nickname=HRMB sampled_on=2021-06-30T19:23:53 sampled_by=0.4.3.5 listed=1
+LastWritten 2021-07-06 19:16:21
+TorVersion Tor 0.4.3.5
+TotalBuildTimes 278
