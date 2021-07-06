@@ -131,6 +131,7 @@ fn start_test_server(_data_dir: &str) {
 		}
 		if res.is_err() {
 			debug!("can't connect");
+			std::thread::sleep(std::time::Duration::from_millis(100));
 			continue;
 		}
 		debug!("height: {}", res.unwrap().0);
@@ -359,8 +360,8 @@ fn test_txs() {
 			tx_id: None,
 		}),
 	);
-	let _txs_response = wallet.txs(&config, "");
-	//assert_eq!(txs_response.is_err(), false);
+	let txs_response = wallet.txs(&config, "");
+	assert_eq!(txs_response.is_err(), false);
 
 	clean_output_dir(test_dir);
 }
