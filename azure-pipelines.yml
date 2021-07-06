@@ -49,7 +49,7 @@ jobs:
   steps:
     - script: |
         sudo apt-get update -yqq
-        sudo apt-get install -yqq --no-install-recommends libncursesw5-dev
+        sudo apt-get install -yqq --no-install-recommends libncursesw5-dev tor
       displayName: Linux Install Dependencies
     - template: '.ci/test.yml'
     - template: '.ci/release.yml'
@@ -66,6 +66,7 @@ jobs:
   steps:
     - script: |
         brew uninstall llvm
+        brew install tor
       displayName: macOS Uninstall LLVM
     - template: '.ci/test.yml'
     - template: '.ci/release.yml'
@@ -82,6 +83,7 @@ jobs:
   steps:
     - script: |
         choco install -y llvm
+        choco install -y tor
       displayName: Windows Install Dependencies
     - template: '.ci/test.yml'
     - template: '.ci/windows-release.yml'
