@@ -131,7 +131,7 @@ fn start_test_server(_data_dir: &str) {
 		}
 		if res.is_err() {
 			debug!("can't connect");
-			std::thread::sleep(std::time::Duration::from_millis(100));
+			std::thread::sleep(std::time::Duration::from_millis(1000));
 			continue;
 		}
 		debug!("height: {}", res.unwrap().0);
