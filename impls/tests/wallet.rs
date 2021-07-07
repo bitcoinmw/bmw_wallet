@@ -32,6 +32,7 @@ use bmw_wallet_util::grin_p2p::Seeding;
 use bmw_wallet_util::grin_servers as servers;
 use bmw_wallet_util::grin_servers::ServerConfig;
 use bmw_wallet_util::grin_util::logger::LogEntry;
+use bmw_wallet_util::grin_util::StopState;
 use std::net::SocketAddr;
 use std::net::{IpAddr, Ipv4Addr};
 use std::path::PathBuf;
@@ -78,7 +79,7 @@ fn build_server_config(api_str: &str, port: u16, tor_port: u16, data_dir: &str) 
 	config
 }
 
-fn spawn_server(config: ServerConfig) {
+fn spawn_server(config: ServerConfig, stop_state: Arc<StopState>) {
 	let (_logs_tx, logs_rx) = mpsc::sync_channel::<LogEntry>(200);
 	thread::spawn(|| {
 		servers::Server::start(
@@ -97,24 +98,23 @@ fn spawn_server(config: ServerConfig) {
 				}
 				serv.stop();
 			},
+			Some(stop_state),
 		)
 		.unwrap();
 	});
 }
 
-fn start_test_server(data_dir: &str) {
+fn start_test_server(data_dir: &str, stop_state: Arc<StopState>) {
 	global::init_global_chain_type(global::ChainTypes::UserTesting);
 
 	// start server 1
 
 	let data_dir_1 = format!("{}/1", data_dir.clone());
-	println!("dir = {}", data_dir_1);
-	error!("dir={}", data_dir_1);
 	std::fs::create_dir(data_dir.clone()).unwrap();
 	std::fs::create_dir(data_dir_1.clone()).unwrap();
 	copy_dir_all("tests/resources/1", data_dir_1.clone()).unwrap();
 	let config = build_server_config("127.0.0.1:23493", 23494, 23497, &data_dir_1);
-	spawn_server(config);
+	spawn_server(config, stop_state);
 
 	// start server 2
 	//let config = build_server_config("127.0.0.1:23393", 23394, 23397, "2");
@@ -341,8 +341,8 @@ fn test_txs() {
 	clean_output_dir(test_dir);
 	global::set_local_chain_type(global::ChainTypes::UserTesting);
 	// start the server
-	start_test_server(test_dir);
-	//std::thread::sleep(std::time::Duration::from_millis(10 * 1000));
+	let stop_state = Arc::new(StopState::new());
+	start_test_server(test_dir, stop_state.clone());
 
 	let mut wallet = get_wallet_instance();
 	let config = build_config(
@@ -372,5 +372,8 @@ fn test_txs() {
 	let txs_response = wallet.txs(&config, "");
 	assert_eq!(txs_response.is_err(), false);
 
+	// clean up
+	stop_state.stop();
+	std::thread::sleep(std::time::Duration::from_millis(300));
 	clean_output_dir(test_dir);
 }
