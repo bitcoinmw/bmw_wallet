@@ -27,6 +27,7 @@ use bmw_wallet_impls::HTTPNodeClient;
 use bmw_wallet_libwallet::WalletInst;
 use bmw_wallet_util::grin_core::global;
 use bmw_wallet_util::grin_core::global::ChainTypes;
+use bmw_wallet_util::grin_core::libtx::proof::PaymentId;
 use bmw_wallet_util::grin_p2p::msg::PeerAddrs;
 use bmw_wallet_util::grin_p2p::types::PeerAddr;
 use bmw_wallet_util::grin_p2p::Seeding;
@@ -391,6 +392,48 @@ fn test_txs(test_dir: &str, wallet: &mut dyn WalletInst) {
 	);
 	let txs_response = wallet.txs(&config, "");
 	assert_eq!(txs_response.is_err(), false);
+
+	let config = build_config(
+		test_dir,
+		"127.0.0.1:23493",
+		None,
+		None,
+		Some(TxsArgs {
+			payment_id: Some(format!("{}", PaymentId::new())),
+			tx_id: None,
+		}),
+		None,
+	);
+	let txs_response = wallet.txs(&config, "");
+	assert_eq!(txs_response.is_err(), false);
+
+	let config = build_config(
+		test_dir,
+		"127.0.0.1:23493",
+		None,
+		None,
+		Some(TxsArgs {
+			payment_id: None,
+			tx_id: Some(1),
+		}),
+		None,
+	);
+	let txs_response = wallet.txs(&config, "");
+	assert_eq!(txs_response.is_err(), false);
+
+	let config = build_config(
+		test_dir,
+		"127.0.0.1:23493",
+		None,
+		None,
+		Some(TxsArgs {
+			payment_id: Some(format!("{}", PaymentId::new())),
+			tx_id: Some(1),
+		}),
+		None,
+	);
+	let txs_response = wallet.txs(&config, "");
+	assert_eq!(txs_response.is_err(), true);
 }
 
 fn test_outputs(test_dir: &str, wallet: &mut dyn WalletInst) {
@@ -401,6 +444,17 @@ fn test_outputs(test_dir: &str, wallet: &mut dyn WalletInst) {
 		None,
 		None,
 		Some(OutputsArgs { show_spent: false }),
+	);
+	let outputs_response = wallet.outputs(&config, "");
+	assert_eq!(outputs_response.is_err(), false);
+
+	let config = build_config(
+		test_dir,
+		"127.0.0.1:23493",
+		None,
+		None,
+		None,
+		Some(OutputsArgs { show_spent: true }),
 	);
 	let outputs_response = wallet.outputs(&config, "");
 	assert_eq!(outputs_response.is_err(), false);
