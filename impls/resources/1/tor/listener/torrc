@@ -1,6 +1,0 @@
-SocksPort 127.0.0.1:3417
-DataDirectory ./data
-HiddenServiceDir ./onion_service_addresses/ykpnocn7pu3okbijgfrmazhrdpcppqm657d7byginvzcjlhhfasqtmad
-HiddenServiceVersion 3
-HiddenServicePort 80 0.0.0.0:3414
-HiddenServicePort 8080 127.0.0.1:23493
