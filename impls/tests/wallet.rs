@@ -392,6 +392,10 @@ fn test_txs(test_dir: &str, wallet: &mut dyn WalletInst) {
 	);
 	let txs_response = wallet.txs(&config, "");
 	assert_eq!(txs_response.is_err(), false);
+	let txs_response = txs_response.unwrap();
+	assert_eq!(txs_response.tx_entries().unwrap().len(), 0);
+	assert_eq!(txs_response.get_height().unwrap(), 0);
+	assert_eq!(txs_response.get_timestamps().unwrap().len(), 0);
 
 	let config = build_config(
 		test_dir,
@@ -406,6 +410,10 @@ fn test_txs(test_dir: &str, wallet: &mut dyn WalletInst) {
 	);
 	let txs_response = wallet.txs(&config, "");
 	assert_eq!(txs_response.is_err(), false);
+	let txs_response = txs_response.unwrap();
+	assert_eq!(txs_response.tx_entries().unwrap().len(), 0);
+	assert_eq!(txs_response.get_height().unwrap(), 0);
+	assert_eq!(txs_response.get_timestamps().unwrap().len(), 0);
 
 	let config = build_config(
 		test_dir,
@@ -420,6 +428,10 @@ fn test_txs(test_dir: &str, wallet: &mut dyn WalletInst) {
 	);
 	let txs_response = wallet.txs(&config, "");
 	assert_eq!(txs_response.is_err(), false);
+	let txs_response = txs_response.unwrap();
+	assert_eq!(txs_response.tx_entries().unwrap().len(), 0);
+	assert_eq!(txs_response.get_height().unwrap(), 0);
+	assert_eq!(txs_response.get_timestamps().unwrap().len(), 0);
 
 	let config = build_config(
 		test_dir,
@@ -447,6 +459,9 @@ fn test_outputs(test_dir: &str, wallet: &mut dyn WalletInst) {
 	);
 	let outputs_response = wallet.outputs(&config, "");
 	assert_eq!(outputs_response.is_err(), false);
+	let outputs_response = outputs_response.unwrap();
+	assert_eq!(outputs_response.get_outputs_data().unwrap().len(), 0);
+	assert_eq!(outputs_response.get_height().unwrap(), 0);
 
 	let config = build_config(
 		test_dir,
@@ -458,4 +473,7 @@ fn test_outputs(test_dir: &str, wallet: &mut dyn WalletInst) {
 	);
 	let outputs_response = wallet.outputs(&config, "");
 	assert_eq!(outputs_response.is_err(), false);
+	let outputs_response = outputs_response.unwrap();
+	assert_eq!(outputs_response.get_outputs_data().unwrap().len(), 0);
+	assert_eq!(outputs_response.get_height().unwrap(), 0);
 }
