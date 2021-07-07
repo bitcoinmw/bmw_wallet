@@ -43,6 +43,8 @@ use std::thread;
 use std::time::Duration;
 mod chain_test_helper;
 
+use self::chain_test_helper::copy_dir_all;
+
 //use self::chain_test_helper::{build_block, init_chain, mine_chain, new_block};
 
 fn build_server_config(api_str: &str, port: u16, tor_port: u16, data_dir: &str) -> ServerConfig {
@@ -100,11 +102,18 @@ fn spawn_server(config: ServerConfig) {
 	});
 }
 
-fn start_test_server(_data_dir: &str) {
+fn start_test_server(data_dir: &str) {
 	global::init_global_chain_type(global::ChainTypes::UserTesting);
 
 	// start server 1
-	let config = build_server_config("127.0.0.1:23493", 23494, 23497, "tests/resources/1");
+
+	let data_dir_1 = format!("{}/1", data_dir.clone());
+	println!("dir = {}", data_dir_1);
+	error!("dir={}", data_dir_1);
+	std::fs::create_dir(data_dir.clone()).unwrap();
+	std::fs::create_dir(data_dir_1.clone()).unwrap();
+	copy_dir_all("tests/resources/1", data_dir_1.clone()).unwrap();
+	let config = build_server_config("127.0.0.1:23493", 23494, 23497, &data_dir_1);
 	spawn_server(config);
 
 	// start server 2

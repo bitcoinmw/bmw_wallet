@@ -37,7 +37,23 @@ use bmw_wallet_util::grin_util::RwLock;
 use chrono::Duration;
 use rand::thread_rng;
 use std::fs;
+use std::io;
+use std::path::Path;
 use std::sync::Arc;
+
+pub fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
+	fs::create_dir_all(&dst)?;
+	for entry in fs::read_dir(src)? {
+		let entry = entry?;
+		let ty = entry.file_type()?;
+		if ty.is_dir() {
+			copy_dir_all(entry.path(), dst.as_ref().join(entry.file_name()))?;
+		} else {
+			fs::copy(entry.path(), dst.as_ref().join(entry.file_name()))?;
+		}
+	}
+	Ok(())
+}
 
 #[allow(dead_code)]
 pub fn build_block_from_prev<K>(
