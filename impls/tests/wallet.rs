@@ -19,6 +19,7 @@ extern crate log;
 
 use bmw_wallet_config::config::AccountArgs;
 use bmw_wallet_config::config::InitArgs;
+use bmw_wallet_config::config::OutputsArgs;
 use bmw_wallet_config::config::TxsArgs;
 use bmw_wallet_config::config::WalletConfig;
 use bmw_wallet_impls::wallet::Wallet;
@@ -162,6 +163,7 @@ fn build_config(
 	init_args: Option<InitArgs>,
 	account_args: Option<AccountArgs>,
 	txs_args: Option<TxsArgs>,
+	outputs_args: Option<OutputsArgs>,
 ) -> WalletConfig {
 	let mut path = PathBuf::new();
 	path.push(dir);
@@ -175,7 +177,7 @@ fn build_config(
 		node: format!("http://{}", node.to_string()),
 		node_api_secret: None,
 		init_args,
-		outputs_args: None,
+		outputs_args,
 		send_args: None,
 		burn_args: None,
 		claim_args: None,
@@ -205,6 +207,7 @@ fn test_init() {
 		}),
 		None,
 		None,
+		None,
 	);
 	let res = wallet.init(&config, "").unwrap();
 	assert_eq!(res.get_mnemonic().is_ok(), true);
@@ -231,6 +234,7 @@ fn test_account() {
 		}),
 		None,
 		None,
+		None,
 	);
 	let init_resp = wallet.init(&config, "").unwrap();
 	assert_eq!(init_resp.get_mnemonic().is_ok(), true);
@@ -240,6 +244,7 @@ fn test_account() {
 		"127.0.0.1:23493",
 		None,
 		Some(AccountArgs { create: None }),
+		None,
 		None,
 	);
 	let account_resp = wallet.account(&config, "").unwrap();
@@ -256,6 +261,7 @@ fn test_account() {
 		Some(AccountArgs {
 			create: Some("test".to_string()),
 		}),
+		None,
 		None,
 	);
 
@@ -291,11 +297,12 @@ fn test_address() {
 		}),
 		None,
 		None,
+		None,
 	);
 	let init_resp = wallet.init(&config, "").unwrap();
 	assert_eq!(init_resp.get_mnemonic().is_ok(), true);
 
-	let config = build_config(test_dir, "127.0.0.1:23493", None, None, None);
+	let config = build_config(test_dir, "127.0.0.1:23493", None, None, None, None);
 	let address_response = wallet.address(&config, "").unwrap();
 	assert_eq!(address_response.get_address().is_ok(), true);
 
@@ -320,11 +327,12 @@ fn test_info() {
 		}),
 		None,
 		None,
+		None,
 	);
 	let init_resp = wallet.init(&config, "").unwrap();
 	assert_eq!(init_resp.get_mnemonic().is_ok(), true);
 
-	let config = build_config(test_dir, "127.0.0.1:23493", None, None, None);
+	let config = build_config(test_dir, "127.0.0.1:23493", None, None, None, None);
 	let info_response = wallet.info(&config, "").unwrap();
 	assert_eq!(info_response.get_output_count().unwrap(), 0);
 	assert_eq!(info_response.get_height().unwrap(), 0);
@@ -335,7 +343,7 @@ fn test_info() {
 }
 
 #[test]
-fn test_txs() {
+fn test_commands() {
 	bmw_wallet_util::grin_util::init_test_logger();
 	let test_dir = ".bmw_wallet_txs";
 	clean_output_dir(test_dir);
@@ -355,10 +363,21 @@ fn test_txs() {
 		}),
 		None,
 		None,
+		None,
 	);
 	let init_resp = wallet.init(&config, "").unwrap();
 	assert_eq!(init_resp.get_mnemonic().is_ok(), true);
 
+	test_txs(test_dir, &mut wallet);
+	test_outputs(test_dir, &mut wallet);
+
+	// clean up
+	stop_state.stop();
+	std::thread::sleep(std::time::Duration::from_millis(300));
+	clean_output_dir(test_dir);
+}
+
+fn test_txs(test_dir: &str, wallet: &mut dyn WalletInst) {
 	let config = build_config(
 		test_dir,
 		"127.0.0.1:23493",
@@ -368,12 +387,21 @@ fn test_txs() {
 			payment_id: None,
 			tx_id: None,
 		}),
+		None,
 	);
 	let txs_response = wallet.txs(&config, "");
 	assert_eq!(txs_response.is_err(), false);
+}
 
-	// clean up
-	stop_state.stop();
-	std::thread::sleep(std::time::Duration::from_millis(300));
-	clean_output_dir(test_dir);
+fn test_outputs(test_dir: &str, wallet: &mut dyn WalletInst) {
+	let config = build_config(
+		test_dir,
+		"127.0.0.1:23493",
+		None,
+		None,
+		None,
+		Some(OutputsArgs { show_spent: false }),
+	);
+	let outputs_response = wallet.outputs(&config, "");
+	assert_eq!(outputs_response.is_err(), false);
 }
