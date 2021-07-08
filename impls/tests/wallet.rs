@@ -88,7 +88,7 @@ fn spawn_server(config: ServerConfig, stop_state: Arc<StopState>) {
 			config,
 			Some(logs_rx),
 			|serv: servers::Server, _: Option<mpsc::Receiver<LogEntry>>| {
-				global::set_local_chain_type(global::ChainTypes::UserTesting);
+				global::set_local_chain_type(global::ChainTypes::Testnet);
 				let running = Arc::new(AtomicBool::new(true));
 				let r = running.clone();
 				ctrlc::set_handler(move || {
@@ -107,7 +107,7 @@ fn spawn_server(config: ServerConfig, stop_state: Arc<StopState>) {
 }
 
 fn start_test_server(data_dir: &str, stop_state: Arc<StopState>) {
-	global::init_global_chain_type(global::ChainTypes::UserTesting);
+	global::init_global_chain_type(global::ChainTypes::Testnet);
 
 	// start server 1
 
@@ -170,7 +170,7 @@ fn build_config(
 	path.push(dir);
 	let config = WalletConfig {
 		version: "v1".to_string(),
-		chain_type: ChainTypes::Mainnet,
+		chain_type: ChainTypes::Testnet,
 		current_dir: Some(path),
 		create_path: false,
 		sub_command: "account".to_string(),
@@ -195,7 +195,7 @@ fn test_init() {
 	bmw_wallet_util::grin_util::init_test_logger();
 	let test_dir = ".bmw_wallet_init";
 	clean_output_dir(test_dir);
-	global::set_local_chain_type(global::ChainTypes::UserTesting);
+	global::set_local_chain_type(global::ChainTypes::Testnet);
 
 	let mut wallet = get_wallet_instance();
 	let config = build_config(
@@ -222,7 +222,7 @@ fn test_account() {
 	bmw_wallet_util::grin_util::init_test_logger();
 	let test_dir = ".bmw_wallet_account";
 	clean_output_dir(test_dir);
-	global::set_local_chain_type(global::ChainTypes::UserTesting);
+	global::set_local_chain_type(global::ChainTypes::Testnet);
 
 	let mut wallet = get_wallet_instance();
 	let config = build_config(
@@ -285,7 +285,7 @@ fn test_address() {
 	bmw_wallet_util::grin_util::init_test_logger();
 	let test_dir = ".bmw_wallet_address";
 	clean_output_dir(test_dir);
-	global::set_local_chain_type(global::ChainTypes::UserTesting);
+	global::set_local_chain_type(global::ChainTypes::Testnet);
 
 	let mut wallet = get_wallet_instance();
 	let config = build_config(
@@ -315,7 +315,7 @@ fn test_info() {
 	bmw_wallet_util::grin_util::init_test_logger();
 	let test_dir = ".bmw_wallet_info";
 	clean_output_dir(test_dir);
-	global::set_local_chain_type(global::ChainTypes::UserTesting);
+	global::set_local_chain_type(global::ChainTypes::Testnet);
 
 	let mut wallet = get_wallet_instance();
 	let config = build_config(
@@ -348,7 +348,7 @@ fn test_commands() {
 	bmw_wallet_util::grin_util::init_test_logger();
 	let test_dir = ".bmw_wallet_txs";
 	clean_output_dir(test_dir);
-	global::set_local_chain_type(global::ChainTypes::UserTesting);
+	global::set_local_chain_type(global::ChainTypes::Testnet);
 	// start the server
 	let stop_state = Arc::new(StopState::new());
 	start_test_server(test_dir, stop_state.clone());
