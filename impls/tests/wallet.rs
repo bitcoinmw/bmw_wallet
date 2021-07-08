@@ -26,6 +26,7 @@ use bmw_wallet_config::config::WalletConfig;
 use bmw_wallet_impls::wallet::Wallet;
 use bmw_wallet_impls::HTTPNodeClient;
 use bmw_wallet_libwallet::NodeClient;
+use bmw_wallet_libwallet::TxType;
 use bmw_wallet_libwallet::WalletInst;
 use bmw_wallet_util::grin_core::global;
 use bmw_wallet_util::grin_core::global::ChainTypes;
@@ -701,4 +702,37 @@ fn test_claim(test_dir: &str, wallet: &mut dyn WalletInst) {
         );
 
 	assert_eq!(claim_response.is_err(), true);
+
+	// now that we have an unconfirmed transaction, lets test some things about that
+	let config = build_config(
+		&rec_wallet_dir,
+		"127.0.0.1:23493",
+		None,
+		None,
+		Some(TxsArgs {
+			payment_id: None,
+			tx_id: None,
+		}),
+		None,
+		None,
+	);
+	let txs_response = wallet.txs(&config, "");
+	assert_eq!(txs_response.is_ok(), true);
+
+	let txs_response = txs_response.unwrap();
+	assert_eq!(txs_response.tx_entries().unwrap().len(), 1);
+	assert_eq!(txs_response.get_height().unwrap(), 0);
+	assert_eq!(txs_response.get_timestamps().unwrap().len(), 1);
+	assert_eq!(txs_response.tx_entries().unwrap()[0].id, 0);
+	assert_eq!(txs_response.tx_entries().unwrap()[0].tx_type, TxType::Claim);
+	assert_eq!(
+		txs_response.tx_entries().unwrap()[0].amount,
+		100000000000000
+	);
+
+	// unconfirmed is u64::MAX
+	assert_eq!(
+		txs_response.tx_entries().unwrap()[0].confirmation_block,
+		u64::MAX
+	);
 }
