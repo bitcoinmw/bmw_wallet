@@ -57,7 +57,7 @@ impl HTTPNodeClient {
 		self.get_chain_tip()
 	}
 
-	fn send_json_request<D: serde::de::DeserializeOwned>(
+	fn send_json_request<D: serde::de::DeserializeOwned + std::fmt::Debug>(
 		&self,
 		method: &str,
 		params: &serde_json::Value,
@@ -66,7 +66,7 @@ impl HTTPNodeClient {
 		let client = Client::new();
 		let req = build_request(method, params);
 		let res = client.post::<Request, Response>(url.as_str(), self.node_api_secret(), &req);
-
+		let res_full = format!("{:?}", res);
 		match res {
 			Err(e) => {
 				let report = format!("Error calling {}: {}", method, e);
@@ -74,7 +74,13 @@ impl HTTPNodeClient {
 				Err(libwallet::ErrorKind::ClientCallback(report).into())
 			}
 			Ok(inner) => match inner.clone().into_result() {
-				Ok(r) => Ok(r),
+				Ok(r) => {
+					if res_full.contains("\"Err\"") {
+						Err(libwallet::ErrorKind::ClientCallback(res_full).into())
+					} else {
+						Ok(r)
+					}
+				}
 				Err(e) => {
 					error!("{:?}", inner);
 					let report = format!("Unable to parse response for {}: {}", method, e);
@@ -164,7 +170,7 @@ impl NodeClient for HTTPNodeClient {
 	/// Posts a transaction to a grin node
 	fn post_tx(&self, tx: &Transaction, fluff: bool) -> Result<(), libwallet::Error> {
 		let params = json!([tx, fluff]);
-		self.send_json_request::<serde_json::Value>("push_transaction", &params)?;
+		let res = self.send_json_request::<serde_json::Value>("push_transaction", &params)?;
 		Ok(())
 	}
 

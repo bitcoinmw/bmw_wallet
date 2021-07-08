@@ -42,6 +42,9 @@ pub enum ErrorKind {
 	/// Account Error
 	#[fail(display = "Account Error: {}", _0)]
 	AccountError(String),
+	/// No signatures were specified
+	#[fail(display = "No signatures specified")]
+	NoSignatures,
 	/// store error
 	#[fail(display = "Store Error: {}", _0)]
 	StoreError(String),

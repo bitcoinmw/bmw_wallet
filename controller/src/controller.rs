@@ -635,6 +635,7 @@ Backup mnemonic phrase:\n{}{}\n[ {} ]\n{}{}",
 						signature_vec,
 						redeem_script,
 						address_type,
+						&pass,
 					)?;
 
 					print_break_line();

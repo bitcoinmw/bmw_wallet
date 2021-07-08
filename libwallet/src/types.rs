@@ -510,6 +510,7 @@ pub trait WalletInst {
 		signatures: Vec<String>,
 		redeem_script: Option<String>,
 		address_type: u8,
+		password: &str,
 	) -> Result<(), Error>;
 
 	fn txs(&mut self, config: &WalletConfig, pass: &str) -> Result<Box<dyn TxsResponse>, Error>;

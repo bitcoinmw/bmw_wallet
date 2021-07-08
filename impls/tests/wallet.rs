@@ -660,4 +660,45 @@ fn test_claim(test_dir: &str, wallet: &mut dyn WalletInst) {
 			"bmw0969a97ea8f5abf3b71086fe49db7a6b9e79c1ea787a4217e82fb1cfede8f97e83".to_string()
 		)
 	);
+
+	// with no signature should error
+	let claim_response = wallet.claim_bmw(
+		&config,
+		"bmw0969a97ea8f5abf3b71086fe49db7a6b9e79c1ea787a4217e82fb1cfede8f97e83".to_string(),
+		vec![],
+		None,
+		0,
+		"",
+	);
+
+	assert_eq!(claim_response.is_err(), true);
+
+	// with correct signature should be ok
+	let claim_response = wallet.claim_bmw(
+		&config,
+		"bmw0969a97ea8f5abf3b71086fe49db7a6b9e79c1ea787a4217e82fb1cfede8f97e83".to_string(),
+		vec![
+			"IFXGS0eMpzpT+n0ZUwyb1nggxkcC8Ue7Y5sk0MMmJiJocvT0CGJRPAjEBcZrgqn5GzBjWG2mMoiTuor/iP6rHjo="
+			.to_string()
+		],
+		None,
+		0,
+		"",
+	);
+	assert_eq!(claim_response.is_err(), false);
+
+	// try a bad signature
+	let claim_response = wallet.claim_bmw(
+                &config,
+                "bmw0969a97ea8f5abf3b71086fe49db7a6b9e79c1ea787a4217e82fb1cfede8f97e83".to_string(),
+                vec![
+                        "IFXGS0eMpzpT+n0ZUwyb1nggxkcC8Ue7Y5Sk0MMmJiJocvT0CGJRPAjEBcZrgqn5GzBjWG2mMoiTuor/iP6rHjo="
+                        .to_string()
+                ],
+                None,
+                0,
+                "",
+        );
+
+	assert_eq!(claim_response.is_err(), true);
 }

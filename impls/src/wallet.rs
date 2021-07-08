@@ -995,10 +995,6 @@ impl WalletInst for Wallet {
 		let mut btc_recovery_byte_vec = Vec::new();
 		btc_recovery_byte_vec.insert(0, 0);
 		let payment_id = PaymentId::new();
-		println!(
-			"gen chal with is_test = {}, bmw_address = {}",
-			claim_args.is_test, bmw_address
-		);
 		let (out, kern) = reward::output_btc_claim(
 			&keychain,
 			&ProofBuilder::new(&keychain),
@@ -1014,8 +1010,6 @@ impl WalletInst for Wallet {
 			claim_args.private_nonce.clone(),
 			payment_id,
 		)?;
-		println!("result out = {:?}", out);
-		println!("result kern = {:?}", kern);
 
 		let tx = Transaction {
 			offset: BlindingFactor::zero(),
@@ -1057,8 +1051,14 @@ impl WalletInst for Wallet {
 		signatures: Vec<String>,
 		redeem_script: Option<String>,
 		address_type: u8,
+		password: &str,
 	) -> Result<(), libwallet::Error> {
+		if signatures.len() == 0 {
+			return Err(libwallet::error::ErrorKind::NoSignatures.into());
+		}
 		let client = HTTPNodeClient::new(&config.node, config.node_api_secret.clone());
+		// check password
+		let _ = self.get_keychain(config, password)?;
 		let store = self.open_store(config)?;
 		let (acct_index, _max_index) = self.get_acct_index(&config, &store)?;
 
@@ -1079,12 +1079,12 @@ impl WalletInst for Wallet {
 			btc_sigs.push(recsig);
 			btc_recovery_bytes.push(signature[0]);
 		}
-
-		let batch = store.batch()?;
-
 		let claim_args = config.claim_args.as_ref().unwrap();
 
-		let tx_wrapper: Option<TxWrapper> = batch.get_ser(&challenge_bytes)?;
+		let tx_wrapper: Option<TxWrapper> = {
+			let batch = store.batch()?;
+			batch.get_ser(&challenge_bytes)?
+		};
 
 		let (mut tx, payment_id, amount) = match tx_wrapper {
 			Some(wrapper) => (wrapper.tx, wrapper.payment_id, wrapper.amount),
@@ -1095,7 +1095,6 @@ impl WalletInst for Wallet {
 				.into());
 			}
 		};
-
 		let mut kernel = tx.kernels()[0].clone();
 		kernel.features = match kernel.features {
 			BTCClaim { fee, index, .. } => {
@@ -1136,7 +1135,6 @@ impl WalletInst for Wallet {
 				.into());
 			}
 		};
-
 		tx = tx.replace_kernel(kernel);
 
 		// save
@@ -1156,7 +1154,6 @@ impl WalletInst for Wallet {
 			acct_index,
 			&store,
 		)?;
-
 		client.post_tx(&tx, claim_args.fluff)?;
 
 		Ok(())
@@ -1524,6 +1521,7 @@ impl Wallet {
 			TxType::ClaimCancelled => 7u8,
 			TxType::PossibleReorg => 1u8, // reorgs for recevied
 		};
+
 		match output {
 			Some(output) => {
 				tx_key[3 + PAYMENT_ID_LEN..].clone_from_slice(&output.identifier.commitment()[..]);
