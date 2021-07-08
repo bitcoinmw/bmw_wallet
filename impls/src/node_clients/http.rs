@@ -170,7 +170,7 @@ impl NodeClient for HTTPNodeClient {
 	/// Posts a transaction to a grin node
 	fn post_tx(&self, tx: &Transaction, fluff: bool) -> Result<(), libwallet::Error> {
 		let params = json!([tx, fluff]);
-		let res = self.send_json_request::<serde_json::Value>("push_transaction", &params)?;
+		self.send_json_request::<serde_json::Value>("push_transaction", &params)?;
 		Ok(())
 	}
 
