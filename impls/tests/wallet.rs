@@ -18,6 +18,7 @@
 extern crate log;
 
 use bmw_wallet_config::config::AccountArgs;
+use bmw_wallet_config::config::ClaimArgs;
 use bmw_wallet_config::config::InitArgs;
 use bmw_wallet_config::config::OutputsArgs;
 use bmw_wallet_config::config::TxsArgs;
@@ -165,6 +166,7 @@ fn build_config(
 	account_args: Option<AccountArgs>,
 	txs_args: Option<TxsArgs>,
 	outputs_args: Option<OutputsArgs>,
+	claim_args: Option<ClaimArgs>,
 ) -> WalletConfig {
 	let mut path = PathBuf::new();
 	path.push(dir);
@@ -181,7 +183,7 @@ fn build_config(
 		outputs_args,
 		send_args: None,
 		burn_args: None,
-		claim_args: None,
+		claim_args,
 		cancel_args: None,
 		account_args,
 		txs_args,
@@ -206,6 +208,7 @@ fn test_init() {
 			recover: false,
 			recover_phrase: None,
 		}),
+		None,
 		None,
 		None,
 		None,
@@ -236,6 +239,7 @@ fn test_account() {
 		None,
 		None,
 		None,
+		None,
 	);
 	let init_resp = wallet.init(&config, "").unwrap();
 	assert_eq!(init_resp.get_mnemonic().is_ok(), true);
@@ -247,7 +251,11 @@ fn test_account() {
 		Some(AccountArgs { create: None }),
 		None,
 		None,
+		None,
 	);
+
+	let account_resp = wallet.account(&config, "badpass");
+	assert_eq!(account_resp.is_err(), true);
 	let account_resp = wallet.account(&config, "").unwrap();
 	// no accounts created
 	assert_eq!(account_resp.created().unwrap().is_some(), false);
@@ -262,6 +270,7 @@ fn test_account() {
 		Some(AccountArgs {
 			create: Some("test".to_string()),
 		}),
+		None,
 		None,
 		None,
 	);
@@ -299,11 +308,12 @@ fn test_address() {
 		None,
 		None,
 		None,
+		None,
 	);
 	let init_resp = wallet.init(&config, "").unwrap();
 	assert_eq!(init_resp.get_mnemonic().is_ok(), true);
 
-	let config = build_config(test_dir, "127.0.0.1:23493", None, None, None, None);
+	let config = build_config(test_dir, "127.0.0.1:23493", None, None, None, None, None);
 	let address_response = wallet.address(&config, "").unwrap();
 	assert_eq!(address_response.get_address().is_ok(), true);
 
@@ -329,11 +339,15 @@ fn test_info() {
 		None,
 		None,
 		None,
+		None,
 	);
+
 	let init_resp = wallet.init(&config, "").unwrap();
 	assert_eq!(init_resp.get_mnemonic().is_ok(), true);
 
-	let config = build_config(test_dir, "127.0.0.1:23493", None, None, None, None);
+	let config = build_config(test_dir, "127.0.0.1:23493", None, None, None, None, None);
+	let info_response = wallet.info(&config, "badpass");
+	assert_eq!(info_response.is_err(), true);
 	let info_response = wallet.info(&config, "").unwrap();
 	assert_eq!(info_response.get_output_count().unwrap(), 0);
 	assert_eq!(info_response.get_height().unwrap(), 0);
@@ -365,17 +379,28 @@ fn test_commands() {
 		None,
 		None,
 		None,
+		None,
 	);
 	let init_resp = wallet.init(&config, "").unwrap();
 	assert_eq!(init_resp.get_mnemonic().is_ok(), true);
 
 	test_txs(test_dir, &mut wallet);
 	test_outputs(test_dir, &mut wallet);
+	test_backup(test_dir, &mut wallet);
+	test_claim(test_dir, &mut wallet);
 
 	// clean up
 	stop_state.stop();
 	std::thread::sleep(std::time::Duration::from_millis(300));
 	clean_output_dir(test_dir);
+}
+
+fn test_backup(test_dir: &str, wallet: &mut dyn WalletInst) {
+	let config = build_config(test_dir, "127.0.0.1:23493", None, None, None, None, None);
+	let backup_response = wallet.backup(&config, "");
+	assert_eq!(backup_response.unwrap().get_backup_response().is_ok(), true);
+	let backup_response = wallet.backup(&config, "wrong_pass");
+	assert_eq!(backup_response.is_err(), true);
 }
 
 fn test_txs(test_dir: &str, wallet: &mut dyn WalletInst) {
@@ -389,7 +414,10 @@ fn test_txs(test_dir: &str, wallet: &mut dyn WalletInst) {
 			tx_id: None,
 		}),
 		None,
+		None,
 	);
+	let txs_response = wallet.txs(&config, "wrong_pass");
+	assert_eq!(txs_response.is_err(), true);
 	let txs_response = wallet.txs(&config, "");
 	assert_eq!(txs_response.is_err(), false);
 	let txs_response = txs_response.unwrap();
@@ -406,6 +434,7 @@ fn test_txs(test_dir: &str, wallet: &mut dyn WalletInst) {
 			payment_id: Some(format!("{}", PaymentId::new())),
 			tx_id: None,
 		}),
+		None,
 		None,
 	);
 	let txs_response = wallet.txs(&config, "");
@@ -425,6 +454,7 @@ fn test_txs(test_dir: &str, wallet: &mut dyn WalletInst) {
 			tx_id: Some(1),
 		}),
 		None,
+		None,
 	);
 	let txs_response = wallet.txs(&config, "");
 	assert_eq!(txs_response.is_err(), false);
@@ -442,6 +472,7 @@ fn test_txs(test_dir: &str, wallet: &mut dyn WalletInst) {
 			payment_id: Some(format!("{}", PaymentId::new())),
 			tx_id: Some(1),
 		}),
+		None,
 		None,
 	);
 	let txs_response = wallet.txs(&config, "");
@@ -456,7 +487,11 @@ fn test_outputs(test_dir: &str, wallet: &mut dyn WalletInst) {
 		None,
 		None,
 		Some(OutputsArgs { show_spent: false }),
+		None,
 	);
+
+	let outputs_response = wallet.outputs(&config, "badpass");
+	assert_eq!(outputs_response.is_err(), true);
 	let outputs_response = wallet.outputs(&config, "");
 	assert_eq!(outputs_response.is_err(), false);
 	let outputs_response = outputs_response.unwrap();
@@ -470,10 +505,57 @@ fn test_outputs(test_dir: &str, wallet: &mut dyn WalletInst) {
 		None,
 		None,
 		Some(OutputsArgs { show_spent: true }),
+		None,
 	);
 	let outputs_response = wallet.outputs(&config, "");
 	assert_eq!(outputs_response.is_err(), false);
 	let outputs_response = outputs_response.unwrap();
 	assert_eq!(outputs_response.get_outputs_data().unwrap().len(), 0);
 	assert_eq!(outputs_response.get_height().unwrap(), 0);
+}
+
+fn test_claim(test_dir: &str, wallet: &mut dyn WalletInst) {
+	// try an invalid claim address
+	let config = build_config(
+		test_dir,
+		"127.0.0.1:23493",
+		None,
+		None,
+		None,
+		None,
+		Some(ClaimArgs {
+			address: "bc1q7n633668gsgv75gqk6dt23ujmtlatweklzum94".to_string(),
+			redeem_script: None,
+			address_type: None,
+			fluff: false,
+		}),
+	);
+
+	let gen_response = wallet.gen_challenge(&config, "badpass");
+	assert_eq!(gen_response.is_err(), true);
+	let gen_response = wallet.gen_challenge(&config, "");
+	// invalid btc address (for our gen_bin)
+	assert_eq!(gen_response.is_err(), true);
+
+	// try a valid one based on our gen_bin
+	// try an invalid claim address
+	let config = build_config(
+		test_dir,
+		"127.0.0.1:23493",
+		None,
+		None,
+		None,
+		None,
+		Some(ClaimArgs {
+			address: "1AHNUd5zX3ecpjePrWTYNWEbsKX9T1Ephu".to_string(),
+			redeem_script: None,
+			address_type: None,
+			fluff: false,
+		}),
+	);
+
+	let gen_response = wallet.gen_challenge(&config, "");
+	assert_eq!(gen_response.is_err(), false);
+
+	//let gen_response = gen_response.unwrap();
 }
