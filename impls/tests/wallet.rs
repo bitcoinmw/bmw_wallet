@@ -25,6 +25,7 @@ use bmw_wallet_config::config::TxsArgs;
 use bmw_wallet_config::config::WalletConfig;
 use bmw_wallet_impls::wallet::Wallet;
 use bmw_wallet_impls::HTTPNodeClient;
+use bmw_wallet_libwallet::NodeClient;
 use bmw_wallet_libwallet::WalletInst;
 use bmw_wallet_util::grin_core::global;
 use bmw_wallet_util::grin_core::global::ChainTypes;
@@ -35,6 +36,8 @@ use bmw_wallet_util::grin_p2p::Seeding;
 use bmw_wallet_util::grin_servers as servers;
 use bmw_wallet_util::grin_servers::ServerConfig;
 use bmw_wallet_util::grin_util::logger::LogEntry;
+use bmw_wallet_util::grin_util::secp::key::SecretKey;
+use bmw_wallet_util::grin_util::static_secp_instance;
 use bmw_wallet_util::grin_util::StopState;
 use std::net::SocketAddr;
 use std::net::{IpAddr, Ipv4Addr};
@@ -57,6 +60,7 @@ fn build_server_config(api_str: &str, port: u16, tor_port: u16, data_dir: &str) 
 	config.api_http_addr = api_str.to_string();
 	config.p2p_config.tor_port = tor_port;
 	config.skip_sync_wait = Some(true);
+	config.skip_sync = Some(true);
 	config.p2p_config.port = port;
 	config.p2p_config.seeding_type = Seeding::List;
 	config.p2p_config.seeds = Some(PeerAddrs {
@@ -77,6 +81,34 @@ fn build_server_config(api_str: &str, port: u16, tor_port: u16, data_dir: &str) 
 				IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
 				23194,
 			)),
+			PeerAddr::Ip(SocketAddr::new(
+				IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+				23094,
+			)),
+		],
+	});
+	config.p2p_config.peers_allow = Some(PeerAddrs {
+		peers: vec![
+			PeerAddr::Ip(SocketAddr::new(
+				IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+				23494,
+			)),
+			PeerAddr::Ip(SocketAddr::new(
+				IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+				23394,
+			)),
+			PeerAddr::Ip(SocketAddr::new(
+				IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+				23294,
+			)),
+			PeerAddr::Ip(SocketAddr::new(
+				IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+				23194,
+			)),
+			PeerAddr::Ip(SocketAddr::new(
+				IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+				23094,
+			)),
 		],
 	});
 	config
@@ -91,11 +123,6 @@ fn spawn_server(config: ServerConfig, stop_state: Arc<StopState>) {
 			|serv: servers::Server, _: Option<mpsc::Receiver<LogEntry>>| {
 				global::set_local_chain_type(global::ChainTypes::Testnet);
 				let running = Arc::new(AtomicBool::new(true));
-				let r = running.clone();
-				ctrlc::set_handler(move || {
-					r.store(false, Ordering::SeqCst);
-				})
-				.expect("Error setting handler for both SIGINT (Ctrl+C) and SIGTERM (kill)");
 				while running.load(Ordering::SeqCst) {
 					thread::sleep(Duration::from_secs(1));
 				}
@@ -107,29 +134,42 @@ fn spawn_server(config: ServerConfig, stop_state: Arc<StopState>) {
 	});
 }
 
-fn start_test_server(data_dir: &str, stop_state: Arc<StopState>) {
+fn start_test_server(data_dir: &str, stop_states: Vec<Arc<StopState>>) {
 	global::init_global_chain_type(global::ChainTypes::Testnet);
 
-	// start server 1
-
 	let data_dir_1 = format!("{}/1", data_dir.clone());
+	//let data_dir_2 = format!("{}/2", data_dir.clone());
+	//let data_dir_3 = format!("{}/3", data_dir.clone());
+	//let data_dir_4 = format!("{}/4", data_dir.clone());
+	//let data_dir_5 = format!("{}/5", data_dir.clone());
+
 	std::fs::create_dir(data_dir.clone()).unwrap();
 	std::fs::create_dir(data_dir_1.clone()).unwrap();
 	copy_dir_all("tests/resources/1", data_dir_1.clone()).unwrap();
-	let config = build_server_config("127.0.0.1:23493", 23494, 23497, &data_dir_1);
-	spawn_server(config, stop_state);
+	//copy_dir_all("tests/resources/2", data_dir_1.clone()).unwrap();
+	//copy_dir_all("tests/resources/3", data_dir_1.clone()).unwrap();
+	//copy_dir_all("tests/resources/4", data_dir_1.clone()).unwrap();
+	//copy_dir_all("tests/resources/5", data_dir_1.clone()).unwrap();
 
 	// start server 2
-	//let config = build_server_config("127.0.0.1:23393", 23394, 23397, "2");
-	//spawn_server(config);
+	//let config = build_server_config("127.0.0.1:23393", 23394, 23397, &data_dir_2);
+	//spawn_server(config, stop_states[1].clone());
 
 	// start server 3
-	//let config = build_server_config("127.0.0.1:23293", 23294, 23297, "3");
-	//spawn_server(config);
+	//let config = build_server_config("127.0.0.1:23293", 23294, 23297, &data_dir_3);
+	//spawn_server(config, stop_states[2].clone());
 
 	// start server 4
-	//let config = build_server_config("127.0.0.1:23193", 23194, 23197, "4");
-	//spawn_server(config);
+	//let config = build_server_config("127.0.0.1:23193", 23194, 23197, &data_dir_4);
+	//spawn_server(config, stop_states[3].clone());
+
+	// start server 5
+	//let config = build_server_config("127.0.0.1:23093", 23094, 23097, &data_dir_5);
+	//spawn_server(config, stop_states[4].clone());
+
+	// start server 1
+	let config = build_server_config("127.0.0.1:23493", 23494, 23497, &data_dir_1);
+	spawn_server(config, stop_states[0].clone());
 
 	std::thread::sleep(std::time::Duration::from_millis(10 * 1000));
 
@@ -137,8 +177,10 @@ fn start_test_server(data_dir: &str, stop_state: Arc<StopState>) {
 	loop {
 		count += 1;
 		let client = HTTPNodeClient::new("http://127.0.0.1:23493", None);
-		let res = client.chain_height();
+		//let res = client.chain_height();
+		let res = client.scan(vec![], 10, 0, vec![]);
 		if count == 100 {
+			debug!("tried 100 times, quiting");
 			break;
 		}
 		if res.is_err() {
@@ -146,7 +188,13 @@ fn start_test_server(data_dir: &str, stop_state: Arc<StopState>) {
 			std::thread::sleep(std::time::Duration::from_millis(1000));
 			continue;
 		}
-		debug!("height: {}", res.unwrap().0);
+		let res = res.unwrap();
+		if res.2 {
+			// still not synced
+			debug!("still syncing"); // shouldn't happen with skip_sync
+			std::thread::sleep(std::time::Duration::from_millis(1000));
+			continue;
+		}
 		break;
 	}
 }
@@ -217,7 +265,6 @@ fn test_init() {
 	assert_eq!(res.get_mnemonic().is_ok(), true);
 
 	clean_output_dir(test_dir);
-	assert!(true);
 }
 
 #[test]
@@ -286,7 +333,6 @@ fn test_account() {
 	assert_eq!(account_info[1].name, "test");
 
 	clean_output_dir(test_dir);
-	assert!(true);
 }
 
 #[test]
@@ -360,12 +406,18 @@ fn test_info() {
 #[test]
 fn test_commands() {
 	bmw_wallet_util::grin_util::init_test_logger();
-	let test_dir = ".bmw_wallet_txs";
+	let test_dir = ".bmw_wallet_commands";
 	clean_output_dir(test_dir);
 	global::set_local_chain_type(global::ChainTypes::Testnet);
 	// start the server
-	let stop_state = Arc::new(StopState::new());
-	start_test_server(test_dir, stop_state.clone());
+	let stop_states = vec![
+		Arc::new(StopState::new()),
+		Arc::new(StopState::new()),
+		Arc::new(StopState::new()),
+		Arc::new(StopState::new()),
+		Arc::new(StopState::new()),
+	];
+	start_test_server(test_dir, stop_states.clone());
 
 	let mut wallet = get_wallet_instance();
 	let config = build_config(
@@ -390,7 +442,9 @@ fn test_commands() {
 	test_claim(test_dir, &mut wallet);
 
 	// clean up
-	stop_state.stop();
+	for stop_state in stop_states {
+		stop_state.stop();
+	}
 	std::thread::sleep(std::time::Duration::from_millis(300));
 	clean_output_dir(test_dir);
 }
@@ -515,9 +569,46 @@ fn test_outputs(test_dir: &str, wallet: &mut dyn WalletInst) {
 }
 
 fn test_claim(test_dir: &str, wallet: &mut dyn WalletInst) {
+	// we need to build a static wallet for testing. Use init -r.
+	// build new dir
+	let rec_wallet_dir = format!("{}/rec_wallet", test_dir);
+	let config = build_config(
+                &rec_wallet_dir,
+                "127.0.0.1:23493",
+                Some(InitArgs {
+                        here: true,
+                        recover: true,
+                        recover_phrase: Some(
+				"remember erode concert first dinosaur educate noble pitch tiger control stairs crisp"
+				.to_string()
+			),
+                }),
+                None,
+                None,
+                None,
+                None,
+        );
+	let init_response = wallet.init(&config, "");
+	assert_eq!(init_response.is_err(), false);
+
+	let private_nonce = {
+		let secp = static_secp_instance();
+		let secp = secp.lock();
+		Some(
+			SecretKey::from_slice(
+				&secp,
+				&[
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 1,
+				],
+			)
+			.unwrap(),
+		)
+	};
+
 	// try an invalid claim address
 	let config = build_config(
-		test_dir,
+		&rec_wallet_dir,
 		"127.0.0.1:23493",
 		None,
 		None,
@@ -528,10 +619,12 @@ fn test_claim(test_dir: &str, wallet: &mut dyn WalletInst) {
 			redeem_script: None,
 			address_type: None,
 			fluff: false,
+			is_test: true,
+			private_nonce: private_nonce.clone(),
 		}),
 	);
 
-	let gen_response = wallet.gen_challenge(&config, "badpass");
+	let gen_response = wallet.gen_challenge(&config, "badass");
 	assert_eq!(gen_response.is_err(), true);
 	let gen_response = wallet.gen_challenge(&config, "");
 	// invalid btc address (for our gen_bin)
@@ -540,7 +633,7 @@ fn test_claim(test_dir: &str, wallet: &mut dyn WalletInst) {
 	// try a valid one based on our gen_bin
 	// try an invalid claim address
 	let config = build_config(
-		test_dir,
+		&rec_wallet_dir,
 		"127.0.0.1:23493",
 		None,
 		None,
@@ -551,11 +644,20 @@ fn test_claim(test_dir: &str, wallet: &mut dyn WalletInst) {
 			redeem_script: None,
 			address_type: None,
 			fluff: false,
+			is_test: true,
+			private_nonce,
 		}),
 	);
 
 	let gen_response = wallet.gen_challenge(&config, "");
 	assert_eq!(gen_response.is_err(), false);
 
-	//let gen_response = gen_response.unwrap();
+	let gen_response = gen_response.unwrap();
+	// it's deterministic because we passed in the nonce and set is_test to true
+	assert_eq!(
+		gen_response,
+		Box::new(
+			"bmw0969a97ea8f5abf3b71086fe49db7a6b9e79c1ea787a4217e82fb1cfede8f97e83".to_string()
+		)
+	);
 }

@@ -18,6 +18,7 @@ use crate::error::Error;
 use crate::error::ErrorKind;
 use bmw_wallet_util::grin_core::address::Address;
 use bmw_wallet_util::grin_core::global::ChainTypes;
+use bmw_wallet_util::grin_util::secp::key::SecretKey;
 use clap::load_yaml;
 use clap::App;
 use std::env;
@@ -130,6 +131,10 @@ pub struct ClaimArgs {
 	pub address_type: Option<u8>,
 	/// whether to fluff this transaction
 	pub fluff: bool,
+	/// is this a test (must ONLY be used for testing, removes randomness of challenge)
+	pub is_test: bool,
+	/// passed in private nonce. Only "is_some" for tests. Production must use None
+	pub private_nonce: Option<SecretKey>,
 }
 
 /// Arguments for txs command
@@ -350,6 +355,8 @@ pub fn get_config() -> Result<WalletConfig, Error> {
 				redeem_script,
 				address_type,
 				fluff,
+				is_test: false,
+				private_nonce: None,
 			});
 		}
 		("burn", Some(burn_args_values)) => {

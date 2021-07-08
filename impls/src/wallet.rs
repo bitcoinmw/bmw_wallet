@@ -995,22 +995,27 @@ impl WalletInst for Wallet {
 		let mut btc_recovery_byte_vec = Vec::new();
 		btc_recovery_byte_vec.insert(0, 0);
 		let payment_id = PaymentId::new();
-
+		println!(
+			"gen chal with is_test = {}, bmw_address = {}",
+			claim_args.is_test, bmw_address
+		);
 		let (out, kern) = reward::output_btc_claim(
 			&keychain,
 			&ProofBuilder::new(&keychain),
 			bmw_address,
 			0,
-			false,
+			claim_args.is_test,
 			value,
 			index,
 			sigs,
 			btc_recovery_byte_vec,
 			None,
 			0,
-			None,
+			claim_args.private_nonce.clone(),
 			payment_id,
 		)?;
+		println!("result out = {:?}", out);
+		println!("result kern = {:?}", kern);
 
 		let tx = Transaction {
 			offset: BlindingFactor::zero(),
