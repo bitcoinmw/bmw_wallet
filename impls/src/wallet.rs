@@ -685,6 +685,8 @@ impl WalletInst for Wallet {
 		// lock inputs
 		self.lock_inputs(tx.inputs(), &store, true)?;
 
+		client.post_tx(&tx, send_args.fluff)?;
+
 		// save
 		let id = self.get_next_id(&store, acct_index)?;
 		self.insert_txn(
@@ -702,8 +704,6 @@ impl WalletInst for Wallet {
 			acct_index,
 			&store,
 		)?;
-
-		client.post_tx(&tx, send_args.fluff)?;
 
 		Ok(Box::new(SendResponseImpl { payment_id }))
 	}
@@ -921,6 +921,8 @@ impl WalletInst for Wallet {
 		// lock inputs
 		self.lock_inputs(tx.inputs(), &store, true)?;
 
+		client.post_tx(&tx, burn_args.fluff)?;
+
 		// save
 		let id = self.get_next_id(&store, acct_index)?;
 		self.insert_txn(
@@ -938,8 +940,6 @@ impl WalletInst for Wallet {
 			acct_index,
 			&store,
 		)?;
-
-		client.post_tx(&tx, burn_args.fluff)?;
 
 		Ok(Box::new(BurnResponseImpl { payment_id }))
 	}
@@ -1137,7 +1137,8 @@ impl WalletInst for Wallet {
 		};
 		tx = tx.replace_kernel(kernel);
 
-		// save
+		client.post_tx(&tx, claim_args.fluff)?;
+
 		let id = self.get_next_id(&store, acct_index)?;
 		self.insert_txn(
 			Some(tx.clone()),
@@ -1154,7 +1155,6 @@ impl WalletInst for Wallet {
 			acct_index,
 			&store,
 		)?;
-		client.post_tx(&tx, claim_args.fluff)?;
 
 		Ok(())
 	}
@@ -1507,6 +1507,47 @@ impl Wallet {
 	) -> Result<(), Error> {
 		// prefix the tx with '3u8'
 		let payment_id_as_slice = &format!("{}", payment_id);
+
+		// if tx_type is Recevied, check if there's a claim for this one. If so, return without
+		// saving to db
+		if tx_type == TxType::Received {
+			let iter = {
+				let batch = store.batch()?;
+				batch.iter(&[3u8, account_id, 3u8], |_, v| {
+					let txn_result: Result<TxEntry, ser::Error> =
+						ser::deserialize(&mut v.clone(), ser::ProtocolVersion(2))
+							.map_err(From::from);
+					Ok(txn_result)
+				})
+			};
+
+			let mut tx_vec = vec![];
+			for mut v in iter {
+				loop {
+					match v.next() {
+						Some(tx_result) => {
+							let tx_result = tx_result?;
+							tx_vec.push(tx_result);
+						}
+						None => break,
+					}
+				}
+			}
+
+			for tx in tx_vec {
+				if tx.tx.is_some() && output.is_some() {
+					let txn = tx.tx.unwrap();
+					let outputs = txn.outputs();
+					if outputs.len() > 0
+						&& outputs[0].commitment() == output.as_ref().unwrap().commitment()
+						&& tx.tx_type == TxType::Claim
+					{
+						return Ok(());
+					}
+				}
+			}
+		}
+
 		let mut tx_key = [3u8; PEDERSEN_COMMITMENT_SIZE + PAYMENT_ID_LEN + 3];
 		tx_key[3..3 + PAYMENT_ID_LEN].clone_from_slice(payment_id_as_slice.as_bytes());
 		tx_key[1] = account_id;
@@ -1701,7 +1742,6 @@ impl Wallet {
 					tx_entry.tx_type.clone()
 				};
 				tx_entry.tx_type = tx_type.clone();
-
 				self.insert_txn(
 					tx_entry.tx.clone(),
 					tx_entry.output.clone(),

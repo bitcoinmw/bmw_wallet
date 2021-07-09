@@ -740,11 +740,9 @@ fn test_txs_block1(test_dir: &str, wallet: &mut dyn WalletInst) {
 	let txs_response = txs_response.unwrap();
 	assert_eq!(txs_response.get_height().unwrap(), 1);
 
-	// TODO: fix bug. claim shows a duplicate entry in the txs command.
-	// this should be 2, checking in to keep build working
-	assert_eq!(txs_response.tx_entries().unwrap().len(), 3);
+	assert_eq!(txs_response.tx_entries().unwrap().len(), 2);
 	// TODO: same here fix bug
-	assert_eq!(txs_response.get_timestamps().unwrap().len(), 3);
+	assert_eq!(txs_response.get_timestamps().unwrap().len(), 2);
 	assert_eq!(
 		txs_response.tx_entries().unwrap()[0].amount,
 		100000000000000
