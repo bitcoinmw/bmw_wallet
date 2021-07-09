@@ -135,14 +135,20 @@ fn spawn_server(config: ServerConfig, stop_state: Arc<StopState>) {
 	});
 }
 
-fn start_test_server(data_dir: &str, stop_state: Arc<StopState>, source: &str, api_listener: &str) {
+fn start_test_server(
+	data_dir: &str,
+	stop_state: Arc<StopState>,
+	source: &str,
+	api_listener: &str,
+	tor_port: u16,
+) {
 	let data_dir_1 = format!("{}/{}", data_dir.clone(), source);
 	let source_dir_1 = format!("tests/resources/{}", source);
 	std::fs::create_dir(data_dir_1.clone()).unwrap();
 	copy_dir_all(source_dir_1, data_dir_1.clone()).unwrap();
 
 	// start server
-	let config = build_server_config(api_listener, 23494, 23497, &data_dir_1);
+	let config = build_server_config(api_listener, 23494, tor_port, &data_dir_1);
 	spawn_server(config, stop_state.clone());
 
 	std::thread::sleep(std::time::Duration::from_millis(10 * 1000));
@@ -387,7 +393,7 @@ fn test_commands() {
 	let stop_state = Arc::new(StopState::new());
 	global::init_global_chain_type(global::ChainTypes::Testnet);
 	std::fs::create_dir(test_dir.clone()).unwrap();
-	start_test_server(test_dir, stop_state.clone(), "1", "127.0.0.1:23493");
+	start_test_server(test_dir, stop_state.clone(), "1", "127.0.0.1:23493", 23497);
 
 	let mut wallet = get_wallet_instance();
 	let config = build_config(
@@ -416,7 +422,7 @@ fn test_commands() {
 	std::thread::sleep(std::time::Duration::from_millis(300));
 
 	let stop_state = Arc::new(StopState::new());
-	start_test_server(test_dir, stop_state.clone(), "2", "127.0.0.1:23499");
+	start_test_server(test_dir, stop_state.clone(), "2", "127.0.0.1:23499", 23498);
 	test_txs_block1(test_dir, &mut wallet);
 
 	// clean up
