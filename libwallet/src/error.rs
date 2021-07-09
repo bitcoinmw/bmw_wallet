@@ -145,7 +145,7 @@ impl From<bmw_wallet_util::grin_core::ser::Error> for Error {
 impl From<bmw_wallet_util::grin_core::core::transaction::Error> for Error {
 	fn from(error: bmw_wallet_util::grin_core::core::transaction::Error) -> Error {
 		Error {
-			inner: Context::new(ErrorKind::TransactionError(format!("{}", error))),
+			inner: Context::new(ErrorKind::TransactionError(format!("{:?}", error))),
 		}
 	}
 }
