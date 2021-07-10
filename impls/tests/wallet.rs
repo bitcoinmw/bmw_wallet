@@ -40,6 +40,7 @@ use bmw_wallet_util::grin_util::logger::LogEntry;
 use bmw_wallet_util::grin_util::secp::key::SecretKey;
 use bmw_wallet_util::grin_util::static_secp_instance;
 use bmw_wallet_util::grin_util::StopState;
+use futures::channel::oneshot;
 use std::net::SocketAddr;
 use std::net::{IpAddr, Ipv4Addr};
 use std::path::PathBuf;
@@ -118,6 +119,8 @@ fn build_server_config(api_str: &str, port: u16, tor_port: u16, data_dir: &str) 
 fn spawn_server(config: ServerConfig, stop_state: Arc<StopState>) {
 	let (_logs_tx, logs_rx) = mpsc::sync_channel::<LogEntry>(200);
 	thread::spawn(|| {
+		let api_chan: &'static mut (oneshot::Sender<()>, oneshot::Receiver<()>) =
+			Box::leak(Box::new(oneshot::channel::<()>()));
 		servers::Server::start(
 			config,
 			Some(logs_rx),
@@ -130,8 +133,10 @@ fn spawn_server(config: ServerConfig, stop_state: Arc<StopState>) {
 				serv.stop();
 			},
 			Some(stop_state),
+			api_chan,
 		)
 		.unwrap();
+		std::thread::park();
 	});
 }
 
@@ -422,7 +427,7 @@ fn test_commands() {
 	std::thread::sleep(std::time::Duration::from_millis(300));
 
 	let stop_state = Arc::new(StopState::new());
-	start_test_server(test_dir, stop_state.clone(), "2", "127.0.0.1:23499", 23498);
+	start_test_server(test_dir, stop_state.clone(), "2", "127.0.0.1:23493", 23498);
 	test_txs_block1(test_dir, &mut wallet);
 
 	// clean up
@@ -724,7 +729,7 @@ fn test_txs_block1(test_dir: &str, wallet: &mut dyn WalletInst) {
 	// now that we have an unconfirmed transaction, lets test some things about that
 	let config = build_config(
 		&rec_wallet_dir,
-		"127.0.0.1:23499",
+		"127.0.0.1:23493",
 		None,
 		None,
 		Some(TxsArgs {
