@@ -26,6 +26,7 @@ use bmw_wallet_config::config::WalletConfig;
 use bmw_wallet_impls::wallet::Wallet;
 use bmw_wallet_impls::HTTPNodeClient;
 use bmw_wallet_libwallet::NodeClient;
+use bmw_wallet_libwallet::OutputType;
 use bmw_wallet_libwallet::TxType;
 use bmw_wallet_libwallet::WalletInst;
 use bmw_wallet_util::grin_core::global;
@@ -428,7 +429,7 @@ fn test_commands() {
 
 	let stop_state = Arc::new(StopState::new());
 	start_test_server(test_dir, stop_state.clone(), "2", "127.0.0.1:23493", 23498);
-	test_txs_block1(test_dir, &mut wallet);
+	test_block1(test_dir, &mut wallet);
 
 	// clean up
 	stop_state.stop();
@@ -674,7 +675,6 @@ fn test_claim(test_dir: &str, wallet: &mut dyn WalletInst) {
 	);
 	assert_eq!(claim_response.is_err(), false);
 
-	// TODO: fix bug. claim shows a duplicate entry in the txs command.
 	// try a bad signature
 	let claim_response = wallet.claim_bmw(
                 &config,
@@ -724,7 +724,7 @@ fn test_claim(test_dir: &str, wallet: &mut dyn WalletInst) {
 	);
 }
 
-fn test_txs_block1(test_dir: &str, wallet: &mut dyn WalletInst) {
+fn test_block1(test_dir: &str, wallet: &mut dyn WalletInst) {
 	let rec_wallet_dir = format!("{}/rec_wallet", test_dir);
 	// now that we have an unconfirmed transaction, lets test some things about that
 	let config = build_config(
@@ -746,7 +746,6 @@ fn test_txs_block1(test_dir: &str, wallet: &mut dyn WalletInst) {
 	assert_eq!(txs_response.get_height().unwrap(), 1);
 
 	assert_eq!(txs_response.tx_entries().unwrap().len(), 2);
-	// TODO: same here fix bug
 	assert_eq!(txs_response.get_timestamps().unwrap().len(), 2);
 	assert_eq!(
 		txs_response.tx_entries().unwrap()[0].amount,
@@ -755,4 +754,51 @@ fn test_txs_block1(test_dir: &str, wallet: &mut dyn WalletInst) {
 
 	// this time it should be confirmed in block 1
 	assert_eq!(txs_response.tx_entries().unwrap()[0].confirmation_block, 1);
+
+	// same config ok since there's no new params
+	let info_response = wallet.info(&config, "");
+	assert_eq!(info_response.is_ok(), true);
+	let info_response = info_response.unwrap();
+	assert_eq!(info_response.get_height().unwrap(), 1);
+	assert_eq!(info_response.get_balance().unwrap(), 100_000.3125);
+	assert_eq!(info_response.get_spendable().unwrap(), 100_000.0);
+	assert_eq!(info_response.get_output_count().unwrap(), 2);
+
+	let config = build_config(
+		&rec_wallet_dir,
+		"127.0.0.1:23493",
+		None,
+		None,
+		None,
+		Some(OutputsArgs { show_spent: false }),
+		None,
+	);
+	let outputs_response = wallet.outputs(&config, "");
+
+	assert_eq!(outputs_response.is_ok(), true);
+	let outputs_response = outputs_response.unwrap();
+	assert_eq!(outputs_response.get_height().unwrap(), 1);
+	let res = outputs_response.get_outputs_data().unwrap();
+	assert_eq!(res.len(), 2);
+
+	// one coinbase, one for our claim...order non-deterministic
+	let mut found_coinbase = false;
+	let mut found_plain = false;
+	for output in res {
+		if output.is_coinbase {
+			found_coinbase = true;
+			assert_eq!(output.value, 312_500_000);
+			assert_eq!(output.height, 1);
+			assert_eq!(output.lock_height, 1441);
+			assert_eq!(output.output_type, OutputType::Coinbase);
+		} else {
+			found_plain = true;
+			assert_eq!(output.value, 100_000_000_000_000);
+			assert_eq!(output.height, 1);
+			assert_eq!(output.lock_height, 0);
+			assert_eq!(output.output_type, OutputType::Payment);
+		}
+	}
+	assert!(found_coinbase);
+	assert!(found_plain);
 }
