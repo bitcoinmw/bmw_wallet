@@ -231,7 +231,6 @@ impl InfoResponse for InfoResponseImpl {
 	fn get_height(&self) -> Result<u64, libwallet::error::Error> {
 		Ok(self.height)
 	}
-
 	fn get_balance(&self) -> Result<f64, libwallet::error::Error> {
 		Ok(self.balance)
 	}
@@ -692,6 +691,7 @@ impl WalletInst for Wallet {
 		self.insert_txn(
 			Some(tx.clone()),
 			None,
+			None,
 			payment_id,
 			SystemTime::now()
 				.duration_since(UNIX_EPOCH)
@@ -713,7 +713,7 @@ impl WalletInst for Wallet {
 		config: &WalletConfig,
 		password: &str,
 	) -> Result<Box<dyn TxsResponse>, libwallet::Error> {
-		let mut client = HTTPNodeClient::new(&config.node, config.node_api_secret.clone());
+		let client = HTTPNodeClient::new(&config.node, config.node_api_secret.clone());
 		let keychain = self.get_keychain(config, password)?;
 		let store = self.open_store(config)?;
 		let mut wallet_state_info = self.get_wallet_state_info(&store)?;
@@ -746,8 +746,7 @@ impl WalletInst for Wallet {
 		} else {
 			ctx.wallet_state_info.sync_headers[0].1
 		};
-		let txs = self.get_txns_from_db(acct_index, &store)?;
-		let mut txs = self.check_update_txns(&mut client, txs.clone(), &store)?;
+		let mut txs = self.get_txns_from_db(acct_index, &store)?;
 		let txs_args = config.txs_args.as_ref().unwrap();
 		if txs_args.payment_id.is_some() && txs_args.tx_id.is_some() {
 			return Err(libwallet::ErrorKind::IllegalArgument(
@@ -775,8 +774,8 @@ impl WalletInst for Wallet {
 			}
 			txs = filtered_txs;
 		}
-		txs.sort_by_key(|x| x.confirmation_block);
-		let txs = {
+
+		let mut txs = {
 			let mut ret = vec![];
 
 			for tx in &txs {
@@ -802,6 +801,9 @@ impl WalletInst for Wallet {
 		// get txn timestamps based on outputs (on recovery we may not have some,
 		// return u64::MAX in those cases)
 		let mut timestamps = vec![];
+
+		// sort by id
+		txs.sort_by_key(|x| x.id);
 
 		for tx in &txs {
 			let output = match &tx.tx {
@@ -927,6 +929,7 @@ impl WalletInst for Wallet {
 		let id = self.get_next_id(&store, acct_index)?;
 		self.insert_txn(
 			Some(tx.clone()),
+			None,
 			None,
 			payment_id,
 			SystemTime::now()
@@ -1142,6 +1145,7 @@ impl WalletInst for Wallet {
 		let id = self.get_next_id(&store, acct_index)?;
 		self.insert_txn(
 			Some(tx.clone()),
+			None,
 			None,
 			payment_id,
 			SystemTime::now()
@@ -1384,6 +1388,7 @@ impl Wallet {
 					TxType::BurnCancelled => 6u8,
 					TxType::ClaimCancelled => 7u8,
 					TxType::PossibleReorg => 8u8,
+					TxType::UnknownSpend => 9u8,
 				};
 				match tx.output {
 					Some(output) => {
@@ -1444,6 +1449,7 @@ impl Wallet {
 			TxType::BurnCancelled => 6u8,
 			TxType::ClaimCancelled => 7u8,
 			TxType::PossibleReorg => 8u8,
+			TxType::UnknownSpend => 9u8,
 		};
 		match tx.output {
 			Some(output) => {
@@ -1454,7 +1460,7 @@ impl Wallet {
 			}
 		}
 
-		let mut updated_tx_key = [3u8; PAYMENT_ID_LEN + 3];
+		let mut updated_tx_key = [3u8; PEDERSEN_COMMITMENT_SIZE + PAYMENT_ID_LEN + 3];
 		updated_tx_key[3..3 + PAYMENT_ID_LEN].clone_from_slice(payment_id_as_slice.as_bytes());
 		updated_tx_key[1] = account_id;
 		updated_tx_key[2] = match tx_type {
@@ -1467,6 +1473,7 @@ impl Wallet {
 			TxType::BurnCancelled => 6u8,
 			TxType::ClaimCancelled => 7u8,
 			TxType::PossibleReorg => 8u8,
+			TxType::UnknownSpend => 9u8,
 		};
 
 		match tx.output {
@@ -1496,6 +1503,7 @@ impl Wallet {
 		&mut self,
 		tx: Option<Transaction>,
 		output: Option<Output>,
+		input: Option<Output>,
 		payment_id: PaymentId,
 		_timestamp: u64,
 		amount: u64,
@@ -1538,11 +1546,14 @@ impl Wallet {
 				if tx.tx.is_some() && output.is_some() {
 					let txn = tx.tx.unwrap();
 					let outputs = txn.outputs();
-					if outputs.len() > 0
-						&& outputs[0].commitment() == output.as_ref().unwrap().commitment()
-						&& tx.tx_type == TxType::Claim
-					{
-						return Ok(());
+					if outputs.len() > 0 {
+						for output_for_tx in outputs {
+							if output_for_tx.commitment() == output.as_ref().unwrap().commitment()
+								&& tx.account_id == account_id
+							{
+								return Ok(());
+							}
+						}
 					}
 				}
 			}
@@ -1561,6 +1572,7 @@ impl Wallet {
 			TxType::BurnCancelled => 6u8,
 			TxType::ClaimCancelled => 7u8,
 			TxType::PossibleReorg => 1u8, // reorgs for recevied
+			TxType::UnknownSpend => 9u8,
 		};
 
 		match output {
@@ -1623,6 +1635,7 @@ impl Wallet {
 			account_id,
 			tx,
 			output,
+			input,
 		};
 
 		{
@@ -1690,7 +1703,7 @@ impl Wallet {
 		{
 			let batch = store.batch()?;
 
-			for mut output_data in remove_list {
+			for mut output_data in remove_list.clone() {
 				// prefix the outputs with '1u8'
 				let commit_as_slice =
 					&output_data.output.identifier.commit[0..PEDERSEN_COMMITMENT_SIZE];
@@ -1701,10 +1714,65 @@ impl Wallet {
 			}
 			batch.commit()?;
 		}
+
+		{
+			let mut map = HashMap::new();
+
+			// we must check that each output spent is part of a transaction we know about
+			// if it is not, we need to add a transaction for this so that things will
+			// balance out in txs
+			for output_data in remove_list {
+				let lookup = map.get(&output_data.account_id);
+				let txs = if lookup.is_none() {
+					let txs = self.get_txns_from_db(output_data.account_id, store)?;
+					map.insert(output_data.account_id, txs.clone());
+					txs
+				} else {
+					lookup.unwrap().to_vec()
+				};
+
+				let mut output_found = false;
+				for tx in txs {
+					if tx.tx.is_some() {
+						let inputs = tx.tx.as_ref().unwrap().inputs();
+						for input in inputs {
+							if input.commit == output_data.output.commitment() {
+								if tx.confirmation_block != u64::MAX {
+									output_found = true;
+									break;
+								} else {
+									// cancel this txn because
+									// another txn spent it's output
+									self.cancel_txn(&mut tx.clone(), tx.id, tx.account_id, &store)?;
+								}
+							}
+						}
+					}
+				}
+
+				if !output_found {
+					// we have an unknown spend and we need to create a new txn for it
+					let id = self.get_next_id(&store, output_data.account_id)?;
+					self.insert_txn(
+						None,
+						None,
+						Some(output_data.output),
+						output_data.payment_id,
+						0,
+						output_data.value,
+						TxType::UnknownSpend,
+						id,
+						output_data.height,
+						output_data.account_id,
+						&store,
+					)?;
+				}
+			}
+		}
 		Ok(())
 	}
 
-	fn check_update_txns<N: NodeClient>(
+	pub fn check_update_txns<N: NodeClient>(
 		&mut self,
 		client: &mut N,
 		txns: Vec<TxEntry>,
@@ -1745,6 +1813,7 @@ impl Wallet {
 				self.insert_txn(
 					tx_entry.tx.clone(),
 					tx_entry.output.clone(),
+					tx_entry.input.clone(),
 					tx_entry.payment_id,
 					0,
 					tx_entry.amount,
@@ -1787,7 +1856,11 @@ impl Wallet {
 		Ok(())
 	}
 
-	fn get_txns_from_db(&mut self, acct_index: u8, store: &Store) -> Result<Vec<TxEntry>, Error> {
+	pub fn get_txns_from_db(
+		&mut self,
+		acct_index: u8,
+		store: &Store,
+	) -> Result<Vec<TxEntry>, Error> {
 		// load txs from db
 		let iter = {
 			let batch = store.batch()?;
@@ -2008,6 +2081,7 @@ impl Wallet {
 				self.insert_txn(
 					tx_entry.tx,
 					tx_entry.output,
+					tx_entry.input,
 					tx_entry.payment_id,
 					SystemTime::now()
 						.duration_since(UNIX_EPOCH)
@@ -2024,6 +2098,7 @@ impl Wallet {
 				self.insert_txn(
 					tx_entry.tx,
 					tx_entry.output,
+					tx_entry.input,
 					tx_entry.payment_id,
 					SystemTime::now()
 						.duration_since(UNIX_EPOCH)

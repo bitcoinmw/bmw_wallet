@@ -25,6 +25,7 @@ use crate::libwallet::TxType;
 use crate::wallet::SortType;
 use crate::wallet::Wallet;
 use crate::wallet::WalletContext;
+use crate::HTTPNodeClient;
 use bmw_wallet_config::config::WalletConfig;
 use bmw_wallet_util::grin_core::core::transaction::OutputFeatures;
 use bmw_wallet_util::grin_keychain::Keychain;
@@ -102,6 +103,14 @@ where
 			_ => {}
 		}
 	}
+
+	// update txs
+	let mut client = HTTPNodeClient::new(&ctx.config.node, ctx.config.node_api_secret.clone());
+	for i in 0..(max_index + 1) {
+		let txs = wallet.get_txns_from_db(i, ctx.store)?;
+		wallet.check_update_txns(&mut client, txs.clone(), ctx.store)?;
+	}
+
 	// remove outputs
 	wallet.remove_outputs(remove_list, ctx.store)?;
 
@@ -168,7 +177,7 @@ where
 	if is_txs {
 		println!(
                         "{}",
-                        "--------------------------------------------------------------------------------------------------------------------".yellow()
+                        "--------------------------------------------------------------------------------------------------------------------------------".yellow()
                 );
 	} else {
 		println!(
@@ -306,6 +315,7 @@ where
 											wallet.insert_txn(
 												None,
 												Some(output.2),
+												None,
 												payment_id,
 												SystemTime::now()
 													.duration_since(UNIX_EPOCH)
@@ -324,6 +334,7 @@ where
 											wallet.insert_txn(
 												None,
 												Some(output.2),
+												None,
 												payment_id,
 												SystemTime::now()
 													.duration_since(UNIX_EPOCH)
@@ -345,6 +356,7 @@ where
 											wallet.insert_txn(
 												None,
 												Some(output.2),
+												None,
 												payment_id,
 												SystemTime::now()
 													.duration_since(UNIX_EPOCH)
@@ -362,6 +374,7 @@ where
 											wallet.insert_txn(
 												None,
 												Some(output.2),
+												None,
 												payment_id,
 												SystemTime::now()
 													.duration_since(UNIX_EPOCH)
@@ -384,6 +397,7 @@ where
 										wallet.insert_txn(
 											None,
 											Some(output.2),
+											None,
 											payment_id,
 											SystemTime::now()
 												.duration_since(UNIX_EPOCH)
@@ -403,6 +417,7 @@ where
 										wallet.insert_txn(
 											None,
 											Some(output.2),
+											None,
 											payment_id,
 											SystemTime::now()
 												.duration_since(UNIX_EPOCH)
@@ -449,7 +464,7 @@ where
 				if is_txs {
 					println!(
                         			"{}",
-                        			"--------------------------------------------------------------------------------------------------------------------".yellow()
+                        			"--------------------------------------------------------------------------------------------------------------------------------".yellow()
 			                );
 				} else {
 					println!(

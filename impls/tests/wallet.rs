@@ -1037,21 +1037,22 @@ fn test_block3(test_dir: &str, wallet: &mut dyn WalletInst) {
 	let txs_response = wallet.txs(&config, "");
 	assert_eq!(txs_response.is_ok(), true);
 
-	// TODO: txs has a problem. With different paymentIds, the wallet
-	// doesn't know what to do. Not likely to happen in a regular wallet,
-	// but the wallet should handle. Need to fix, but for now not checking txs
-	//
-	/*
-		let txs_response = txs_response.unwrap();
-		assert_eq!(txs_response.get_height().unwrap(), 3);
-	//println!("tx_entries={:?}", txs_response.tx_entries().unwrap());
-		assert_eq!(txs_response.tx_entries().unwrap().len(), 3);
-		assert_eq!(txs_response.get_timestamps().unwrap().len(), 3);
-		assert_eq!(
-				txs_response.tx_entries().unwrap()[0].amount,
-				100000000000000
-		);
-	*/
+	// this is a scenario where a different wallet sent
+	// the txn that got confirmed. Our wallet sent
+	// a txn that wasn't confirmed. Our wallet's txn
+	// should be cancelled and a new txn added to show 'Unknown Spend'
+	// which means a different wallet instance sent it.
+	// also 3 additional received outputs show up that we didn't know about
+	// they are marked as received instead of change.
+	// So 3 Coinbase + 3 Received + 1 Sent Cancelled + 1 Sent Unknown + 1 Claim = 9 txns
+	let txs_response = txs_response.unwrap();
+	assert_eq!(txs_response.get_height().unwrap(), 3);
+	assert_eq!(txs_response.tx_entries().unwrap().len(), 9);
+	assert_eq!(txs_response.get_timestamps().unwrap().len(), 9);
+	assert_eq!(
+		txs_response.tx_entries().unwrap()[0].amount,
+		100000000000000
+	);
 
 	let config = build_config(
 		&rec_wallet_dir,

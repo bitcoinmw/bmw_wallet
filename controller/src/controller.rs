@@ -47,17 +47,18 @@ fn print_break_line() {
 /// print a white break for formatting
 fn print_break_line_white() {
 	let twenty_dashes = "--------------------";
-	let sixteen_dashes = "----------------";
+	let eight_dashes = "--------";
 	println!(
 		"{}",
 		format!(
-			"{}{}{}{}{}{}",
+			"{}{}{}{}{}{}{}",
 			twenty_dashes,
 			twenty_dashes,
 			twenty_dashes,
 			twenty_dashes,
 			twenty_dashes,
-			sixteen_dashes,
+			twenty_dashes,
+			eight_dashes,
 		)
 	);
 }
@@ -430,7 +431,7 @@ Backup mnemonic phrase:\n{}{}\n[ {} ]\n{}{}",
 						id_gap = format!("{} ", id_gap);
 					}
 					println!(
-						"ID{} PAYMENT_ID       TYPE              DEBIT        CREDIT       BALANCE      CONFIRMS  TIME",
+						"ID{} PAYMENT_ID       TYPE              DEBIT            CREDIT           BALANCE          CONFIRMS  TIME",
 						id_gap,
 					);
 					print_break_line_white();
@@ -449,7 +450,7 @@ Backup mnemonic phrase:\n{}{}\n[ {} ]\n{}{}",
 						count += 1;
 						if count % 20 == 0 {
 							println!(
-                                                		"ID{} PAYMENT_ID       TYPE              DEBIT        CREDIT       BALANCE      CONFIRMS  TIME",
+                                                		"ID{} PAYMENT_ID       TYPE              DEBIT            CREDIT           BALANCE          CONFIRMS  TIME",
 								id_gap,
                                         		);
 							print_break_line_white();
@@ -458,11 +459,16 @@ Backup mnemonic phrase:\n{}{}\n[ {} ]\n{}{}",
 							|| tx.tx_type == TxType::Burn
 							|| tx.tx_type == TxType::SentCancelled
 							|| tx.tx_type == TxType::BurnCancelled
+							|| tx.tx_type == TxType::UnknownSpend
 						{
-							let fee = match tx.tx.as_ref().unwrap().kernels()[0].features {
-								Plain { fee, .. } => fee.into(),
-								Burn { fee, .. } => fee.into(),
-								_ => 0,
+							let fee = if tx.tx.is_none() {
+								0
+							} else {
+								match tx.tx.as_ref().unwrap().kernels()[0].features {
+									Plain { fee, .. } => fee.into(),
+									Burn { fee, .. } => fee.into(),
+									_ => 0,
+								}
 							};
 							if tx.confirmation_block != u64::MAX {
 								cumulative_balance -= tx.amount + fee;
@@ -476,6 +482,7 @@ Backup mnemonic phrase:\n{}{}\n[ {} ]\n{}{}",
 							|| tx.tx_type == TxType::Burn
 							|| tx.tx_type == TxType::SentCancelled
 							|| tx.tx_type == TxType::BurnCancelled
+							|| tx.tx_type == TxType::UnknownSpend
 						{
 							"+0".to_string()
 						} else {
@@ -500,16 +507,21 @@ Backup mnemonic phrase:\n{}{}\n[ {} ]\n{}{}",
 							TxType::BurnCancelled => tx_type = format!("{} ", tx_type),
 							TxType::ClaimCancelled => tx_type = format!("{}", tx_type),
 							TxType::PossibleReorg => tx_type = format!("{}", tx_type),
+							TxType::UnknownSpend => tx_type = format!("{}    ", tx_type),
 						}
 
-						let confirmation_string = if height >= tx.confirmation_block {
+						let confirmation_string = if tx.confirmation_block != u64::MAX
+							&& tx.tx_type != TxType::UnknownSpend
+						{
 							format!(
 								"{}",
 								((height - tx.confirmation_block) + 1)
 									.to_formatted_string(&Locale::en)
 							)
+						} else if tx.tx_type == TxType::UnknownSpend {
+							"-        ".to_string()
 						} else {
-							"ZERO-CONF ".to_string()
+							"ZERO-CONF".to_string()
 						};
 
 						let cumulative_balance = if is_single {
@@ -520,7 +532,7 @@ Backup mnemonic phrase:\n{}{}\n[ {} ]\n{}{}",
 							format!("      -")
 						};
 						println!(
-							"{} {} {} {:12} {:12} {:12} {:9} {}",
+							"{} {} {} {:16} {:16} {:16} {:9} {}",
 							id,
 							format!("{}", tx.payment_id).cyan(),
 							tx_type.red(),

@@ -292,6 +292,7 @@ pub enum TxType {
 	BurnCancelled,
 	ClaimCancelled,
 	PossibleReorg,
+	UnknownSpend,
 }
 
 impl std::fmt::Display for TxType {
@@ -306,6 +307,7 @@ impl std::fmt::Display for TxType {
 			TxType::BurnCancelled => write!(f, "Burn (Cancelled)"),
 			TxType::ClaimCancelled => write!(f, "Claim (Cancelled)"),
 			TxType::PossibleReorg => write!(f, "Possible Reorg TX"),
+			TxType::UnknownSpend => write!(f, "Unknown Spend"),
 		}
 	}
 }
@@ -322,6 +324,7 @@ impl Readable for TxType {
 			6u8 => TxType::BurnCancelled,
 			7u8 => TxType::ClaimCancelled,
 			8u8 => TxType::PossibleReorg,
+			9u8 => TxType::UnknownSpend,
 			_ => return Err(ser::Error::CorruptedData),
 		})
 	}
@@ -339,6 +342,7 @@ impl Writeable for TxType {
 			TxType::BurnCancelled => 6u8,
 			TxType::ClaimCancelled => 7u8,
 			TxType::PossibleReorg => 8u8,
+			TxType::UnknownSpend => 9u8,
 		})?;
 
 		Ok(())
@@ -355,6 +359,7 @@ pub struct TxEntry {
 	pub account_id: u8,
 	pub tx: Option<Transaction>,
 	pub output: Option<Output>,
+	pub input: Option<Output>,
 }
 
 impl Readable for TxEntry {
@@ -374,6 +379,11 @@ impl Readable for TxEntry {
 			_ => None,
 		};
 
+		let input = match reader.read_u8()? {
+			1 => Some(Output::read(reader)?),
+			_ => None,
+		};
+
 		Ok(TxEntry {
 			id,
 			tx_type,
@@ -383,6 +393,7 @@ impl Readable for TxEntry {
 			account_id,
 			tx,
 			output,
+			input,
 		})
 	}
 }
@@ -407,6 +418,14 @@ impl Writeable for TxEntry {
 			let output = self.output.as_ref().unwrap();
 			writer.write_u8(1)?;
 			output.write(writer)?;
+		} else {
+			writer.write_u8(0)?;
+		}
+
+		if self.input.is_some() {
+			let input = self.input.as_ref().unwrap();
+			writer.write_u8(1)?;
+			input.write(writer)?;
 		} else {
 			writer.write_u8(0)?;
 		}
