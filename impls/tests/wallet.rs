@@ -479,6 +479,7 @@ fn test_commands() {
 	let stop_state = Arc::new(StopState::new());
 	start_test_server(test_dir, stop_state.clone(), "3", "127.0.0.1:23493", 23499);
 	test_block3(test_dir, &mut wallet);
+	test_send_and_burn(test_dir, &mut wallet);
 
 	// clean up
 	stop_state.stop();
@@ -911,8 +912,8 @@ fn test_send(test_dir: &str, wallet: &mut dyn WalletInst) {
 	// check that txs, outputs, and info didn't change (reorg checks)
 	test_block1(test_dir, wallet);
 
-	// address for "default" account: tmw1qldcv03e8k7sgy048jwqepvf8242nathj06q6s9n3lx60jw9yv6lqpet0mm
-	// address for "test" account: tmw1qs5f8maamds92wgmv85q3hjvzpsds6cayr4dn686z0pra07xmzqfgzdvh0h
+	// address for "default" account: tmw1qlwmx4msmzrvj0epual2mfu9mgevq6xzqry68ymlj362xp86u399qem6spv
+	// address for "test" account: tmw1qvplwje92z5489azy9xm0y9lm8fukn37e7f8l8286lc9t7gvd80yg8auwdh
 
 	// send from default -> test
 
@@ -1072,4 +1073,165 @@ fn test_block3(test_dir: &str, wallet: &mut dyn WalletInst) {
 	assert_eq!(info_response.get_spendable().unwrap(), 99998.985480000);
 	// 3 coinbase + 3 change
 	assert_eq!(info_response.get_output_count().unwrap(), 6);
+}
+
+fn test_send_and_burn(test_dir: &str, wallet: &mut dyn WalletInst) {
+	let rec_wallet_dir = format!("{}/rec_wallet", test_dir);
+	let config = build_config(
+		&rec_wallet_dir,
+		"127.0.0.1:23493",
+		None,
+		None,
+		None,
+		None,
+		None,
+		Some(SendArgs {
+			amount: Some(1.6),
+			address: Some(
+				Address::from_str(
+					"tmw1qvplwje92z5489azy9xm0y9lm8fukn37e7f8l8286lc9t7gvd80yg8auwdh",
+				)
+				.unwrap(),
+			),
+			selection_strategy_is_all: false,
+			change_outputs: 1,
+			fluff: true,
+			tx_id: None,
+		}),
+		None,
+	);
+
+	let send_response = wallet.send(&config, "").unwrap();
+	let payment_id = Some(format!("{}", send_response.get_payment_id().unwrap()));
+
+	// now check for the unconfirmed txn
+	let config = build_config(
+		&rec_wallet_dir,
+		"127.0.0.1:23493",
+		None,
+		None,
+		Some(TxsArgs {
+			payment_id: payment_id.clone(),
+			tx_id: None,
+		}),
+		None,
+		None,
+		None,
+		None,
+	);
+	let txs_response = wallet.txs(&config, "");
+	assert_eq!(txs_response.is_ok(), true);
+
+	let txs_response = txs_response.unwrap();
+	assert_eq!(txs_response.get_height().unwrap(), 3);
+
+	assert_eq!(txs_response.tx_entries().unwrap().len(), 1);
+	assert_eq!(txs_response.get_timestamps().unwrap().len(), 1);
+	assert_eq!(txs_response.tx_entries().unwrap()[0].amount, 1600000000);
+
+	// now get by id
+	let tx_id = Some(txs_response.tx_entries().unwrap()[0].id);
+
+	let config = build_config(
+		&rec_wallet_dir,
+		"127.0.0.1:23493",
+		None,
+		None,
+		Some(TxsArgs {
+			payment_id: None,
+			tx_id,
+		}),
+		None,
+		None,
+		None,
+		None,
+	);
+	let txs_response = wallet.txs(&config, "");
+	assert_eq!(txs_response.is_ok(), true);
+
+	let txs_response = txs_response.unwrap();
+	assert_eq!(txs_response.get_height().unwrap(), 3);
+
+	assert_eq!(txs_response.tx_entries().unwrap().len(), 1);
+	assert_eq!(txs_response.get_timestamps().unwrap().len(), 1);
+	assert_eq!(txs_response.tx_entries().unwrap()[0].amount, 1600000000);
+
+	// specify both tx_id and payment_id, expect an error
+
+	let config = build_config(
+		&rec_wallet_dir,
+		"127.0.0.1:23493",
+		None,
+		None,
+		Some(TxsArgs { payment_id, tx_id }),
+		None,
+		None,
+		None,
+		None,
+	);
+	let txs_response = wallet.txs(&config, "");
+	assert_eq!(txs_response.is_ok(), false);
+
+	let config = build_config(
+		&rec_wallet_dir,
+		"127.0.0.1:23493",
+		None,
+		None,
+		None,
+		Some(OutputsArgs { show_spent: true }),
+		None,
+		None,
+		None,
+	);
+	let outputs_response = wallet.outputs(&config, "");
+	assert!(outputs_response.is_ok());
+
+	let outputs_response = outputs_response.unwrap();
+
+	let outputs_data = outputs_response.get_outputs_data().unwrap();
+	// the other outputs are still unconfirmed and should not show up yet
+	// 6 unspent + 1 spent
+	assert_eq!(outputs_data.len(), 7);
+
+	let config = build_config(
+		&rec_wallet_dir,
+		"127.0.0.1:23493",
+		None,
+		None,
+		None,
+		None,
+		None,
+		None,
+		None,
+	);
+	let info_response = wallet.info(&config, "");
+
+	assert!(info_response.is_ok());
+
+	let info_response = info_response.unwrap();
+	assert_eq!(info_response.get_height().unwrap(), 3);
+	assert_eq!(info_response.get_balance().unwrap(), 99999.937500000);
+	assert_eq!(info_response.get_spendable().unwrap(), 99998.985480000);
+	// new outputs not confirmed yet
+	assert_eq!(info_response.get_output_count().unwrap(), 6);
+
+	let config = build_config(
+		&rec_wallet_dir,
+		"127.0.0.1:23493",
+		None,
+		None,
+		None,
+		None,
+		None,
+		None,
+		Some(BurnArgs {
+			amount: 3.7,
+			selection_strategy_is_all: false,
+			change_outputs: 1,
+			fluff: true,
+		}),
+	);
+
+	let burn_response = wallet.burn(&config, "").unwrap();
+	assert!(burn_response.get_payment_id().is_ok());
 }
