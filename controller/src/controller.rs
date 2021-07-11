@@ -509,13 +509,15 @@ Backup mnemonic phrase:\n{}{}\n[ {} ]\n{}{}",
 									.to_formatted_string(&Locale::en)
 							)
 						} else {
-							"0conf     ".to_string()
+							"ZERO-CONF ".to_string()
 						};
 
 						let cumulative_balance = if is_single {
 							"    -       ".to_string()
-						} else {
+						} else if tx.confirmation_block != u64::MAX {
 							format!("+{}", cumulative_balance as f64 / 1_000_000_000 as f64)
+						} else {
+							format!("      -")
 						};
 						println!(
 							"{} {} {} {:12} {:12} {:12} {:9} {}",
