@@ -357,7 +357,6 @@ Backup mnemonic phrase:\n{}{}\n[ {} ]\n{}{}",
 				Ok(account_response) => {
 					let created = account_response.created()?;
 					if created.is_some() {
-						//fn created(&self) -> Result<&Option<AccountInfo>, Error>;
 						let created = created.as_ref().unwrap();
 						print_break_line();
 						println!(
@@ -726,4 +725,120 @@ Backup mnemonic phrase:\n{}{}\n[ {} ]\n{}{}",
 		);
 	}
 	Ok(())
+}
+
+#[cfg(test)]
+mod test {
+	use crate::controller::run_command;
+	use bmw_wallet_config::config::AccountArgs;
+	use bmw_wallet_config::config::BurnArgs;
+	use bmw_wallet_config::config::ClaimArgs;
+	use bmw_wallet_config::config::InitArgs;
+	use bmw_wallet_config::config::OutputsArgs;
+	use bmw_wallet_config::config::SendArgs;
+	use bmw_wallet_config::config::TxsArgs;
+	use bmw_wallet_config::config::WalletConfig;
+	use bmw_wallet_impls::wallet::Wallet;
+	use bmw_wallet_util::grin_core::global;
+	use bmw_wallet_util::grin_core::global::ChainTypes;
+	use std::path::PathBuf;
+
+	#[test]
+	fn test_init() {
+		// basic tests for now just test that everything returns ok.
+		// TODO: expand tests
+		bmw_wallet_util::grin_util::init_test_logger();
+		global::set_local_chain_type(global::ChainTypes::UserTesting);
+		let test_dir = ".bmw_wallet_controller_init";
+		let mut wallet = get_wallet_instance();
+		let mut config = build_config(
+			test_dir,
+			"127.0.0.1:23493",
+			Some(InitArgs {
+				here: true,
+				recover: false,
+				recover_phrase: None,
+			}),
+			None,
+			None,
+			None,
+			None,
+			None,
+			None,
+		);
+		config.sub_command = "init".to_string();
+		config.pass = Some("".to_string());
+		assert!(run_command(config, &mut wallet).is_ok());
+
+		clean_output_dir(test_dir);
+	}
+
+	#[test]
+	fn test_account() {
+		// basic tests for now just test that everything returns ok.
+		// TODO: expand tests
+		bmw_wallet_util::grin_util::init_test_logger();
+		global::set_local_chain_type(global::ChainTypes::UserTesting);
+		let test_dir = ".bmw_wallet_controller_account";
+		let mut wallet = get_wallet_instance();
+		let mut config = build_config(
+			test_dir,
+			"127.0.0.1:23493",
+			None,
+			Some(AccountArgs { create: None }),
+			None,
+			None,
+			None,
+			None,
+			None,
+		);
+		config.sub_command = "account".to_string();
+		config.pass = Some("".to_string());
+		assert!(run_command(config, &mut wallet).is_ok());
+
+		clean_output_dir(test_dir);
+	}
+
+	fn get_wallet_instance() -> Wallet {
+		Wallet::new().unwrap()
+	}
+
+	fn build_config(
+		dir: &str,
+		node: &str,
+		init_args: Option<InitArgs>,
+		account_args: Option<AccountArgs>,
+		txs_args: Option<TxsArgs>,
+		outputs_args: Option<OutputsArgs>,
+		claim_args: Option<ClaimArgs>,
+		send_args: Option<SendArgs>,
+		burn_args: Option<BurnArgs>,
+	) -> WalletConfig {
+		let mut path = PathBuf::new();
+		path.push(dir);
+		let config = WalletConfig {
+			version: "v1".to_string(),
+			chain_type: ChainTypes::Testnet,
+			current_dir: Some(path),
+			create_path: false,
+			sub_command: "account".to_string(),
+			account: "default".to_string(),
+			node: format!("http://{}", node.to_string()),
+			node_api_secret: None,
+			init_args,
+			outputs_args,
+			claim_args,
+			cancel_args: None,
+			account_args,
+			txs_args,
+			send_args,
+			burn_args,
+			pass: None,
+		};
+		config
+	}
+
+	pub fn clean_output_dir(test_dir: &str) {
+		let _ = std::fs::remove_dir_all(test_dir);
+	}
 }
