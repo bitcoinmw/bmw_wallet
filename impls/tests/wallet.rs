@@ -494,7 +494,7 @@ fn test_commands() {
 	// clean up
 	stop_state.stop();
 	std::thread::sleep(std::time::Duration::from_millis(300));
-	//clean_output_dir(test_dir);
+	clean_output_dir(test_dir);
 }
 
 fn test_backup(test_dir: &str, wallet: &mut dyn WalletInst) {
