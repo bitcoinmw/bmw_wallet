@@ -18,6 +18,7 @@ use crate::error::Error;
 use crate::error::ErrorKind;
 use bmw_wallet_util::grin_core::address::Address;
 use bmw_wallet_util::grin_core::global::ChainTypes;
+use bmw_wallet_util::grin_core::libtx::proof::PaymentId;
 use bmw_wallet_util::grin_util::secp::key::SecretKey;
 use clap::load_yaml;
 use clap::App;
@@ -118,6 +119,8 @@ pub struct SendArgs {
 	pub fluff: bool,
 	/// the transaction id (used to resubmit a previously created transaction)
 	pub tx_id: Option<u32>,
+	/// the optional payment_id to use for this transaction
+	pub payment_id: Option<PaymentId>,
 }
 
 /// Arguments for claim command
@@ -135,6 +138,8 @@ pub struct ClaimArgs {
 	pub is_test: bool,
 	/// passed in private nonce. Only "is_some" for tests. Production must use None
 	pub private_nonce: Option<SecretKey>,
+	/// the optional payment_id to use for this transaction
+	pub payment_id: Option<PaymentId>,
 }
 
 /// Arguments for txs command
@@ -157,6 +162,8 @@ pub struct BurnArgs {
 	pub change_outputs: u32,
 	/// whether to fluff this transaction
 	pub fluff: bool,
+	/// the optional payment_id to use for this transaction
+	pub payment_id: Option<PaymentId>,
 }
 
 // include build information
@@ -350,6 +357,11 @@ pub fn get_config() -> Result<WalletConfig, Error> {
 
 			let fluff = claim_args_values.is_present("fluff");
 
+			let payment_id = match claim_args_values.value_of("payment_id") {
+				Some(payment_id_value) => Some(PaymentId::from_str(payment_id_value)?),
+				None => None,
+			};
+
 			claim_args = Some(ClaimArgs {
 				address,
 				redeem_script,
@@ -357,6 +369,7 @@ pub fn get_config() -> Result<WalletConfig, Error> {
 				fluff,
 				is_test: false,
 				private_nonce: None,
+				payment_id,
 			});
 		}
 		("burn", Some(burn_args_values)) => {
@@ -391,11 +404,17 @@ pub fn get_config() -> Result<WalletConfig, Error> {
 
 			let fluff = burn_args_values.is_present("fluff");
 
+			let payment_id = match burn_args_values.value_of("payment_id") {
+				Some(payment_id_value) => Some(PaymentId::from_str(payment_id_value)?),
+				None => None,
+			};
+
 			burn_args = Some(BurnArgs {
 				amount,
 				change_outputs,
 				selection_strategy_is_all,
 				fluff,
+				payment_id,
 			});
 		}
 		("send", Some(send_args_values)) => {
@@ -467,6 +486,11 @@ pub fn get_config() -> Result<WalletConfig, Error> {
 
 			let fluff = send_args_values.is_present("fluff");
 
+			let payment_id = match send_args_values.value_of("payment_id") {
+				Some(payment_id_value) => Some(PaymentId::from_str(payment_id_value)?),
+				None => None,
+			};
+
 			send_args = Some(SendArgs {
 				amount,
 				address,
@@ -474,6 +498,7 @@ pub fn get_config() -> Result<WalletConfig, Error> {
 				selection_strategy_is_all,
 				fluff,
 				tx_id,
+				payment_id,
 			});
 		}
 		_ => {}

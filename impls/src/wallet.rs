@@ -566,6 +566,7 @@ impl WalletInst for Wallet {
 		password: &str,
 	) -> Result<Box<dyn SendResponse>, libwallet::Error> {
 		let send_args = config.send_args.as_ref().unwrap();
+
 		let client = HTTPNodeClient::new(&config.node, config.node_api_secret.clone());
 		let store = self.open_store(config)?;
 
@@ -657,7 +658,11 @@ impl WalletInst for Wallet {
 		let key_id = self.get_key_id(acct_index);
 		let pri_view = keychain.derive_key(0, &key_id, SwitchCommitmentType::Regular)?;
 
-		let payment_id = PaymentId::new();
+		let payment_id = match send_args.payment_id {
+			Some(payment_id) => payment_id,
+			None => PaymentId::new(),
+		};
+
 		let tx = self.build_send_transaction(
 			&keychain,
 			amount,
@@ -896,7 +901,10 @@ impl WalletInst for Wallet {
 		let key_id = self.get_key_id(acct_index);
 		let pri_view = keychain.derive_key(0, &key_id, SwitchCommitmentType::Regular)?;
 
-		let payment_id = PaymentId::new();
+		let payment_id = match burn_args.payment_id {
+			Some(payment_id) => payment_id,
+			None => PaymentId::new(),
+		};
 		let tx = self.build_send_transaction(
 			&keychain,
 			amount,
@@ -997,7 +1005,12 @@ impl WalletInst for Wallet {
 		sigs.insert(0, sig);
 		let mut btc_recovery_byte_vec = Vec::new();
 		btc_recovery_byte_vec.insert(0, 0);
-		let payment_id = PaymentId::new();
+
+		let payment_id = match claim_args.payment_id {
+			Some(payment_id) => payment_id,
+			None => PaymentId::new(),
+		};
+
 		let (out, kern) = reward::output_btc_claim(
 			&keychain,
 			&ProofBuilder::new(&keychain),
@@ -1575,12 +1588,17 @@ impl Wallet {
 			TxType::UnknownSpend => 9u8,
 		};
 
-		match output {
-			Some(output) => {
-				tx_key[3 + PAYMENT_ID_LEN..].clone_from_slice(&output.identifier.commitment()[..]);
-			}
-			None => {
-				tx_key[3 + PAYMENT_ID_LEN..].clone_from_slice(&[0u8; PEDERSEN_COMMITMENT_SIZE]);
+		{
+			let output = if input.is_some() { input } else { output };
+
+			match output {
+				Some(output) => {
+					tx_key[3 + PAYMENT_ID_LEN..]
+						.clone_from_slice(&output.identifier.commitment()[..]);
+				}
+				None => {
+					tx_key[3 + PAYMENT_ID_LEN..].clone_from_slice(&[0u8; PEDERSEN_COMMITMENT_SIZE]);
+				}
 			}
 		}
 
@@ -1604,15 +1622,15 @@ impl Wallet {
 			};
 			match output {
 				Some(output) => {
-					tx_key[3 + PAYMENT_ID_LEN..]
+					tx_key_cancelled_check[3 + PAYMENT_ID_LEN..]
 						.clone_from_slice(&output.identifier.commitment()[..]);
 				}
 				None => {
-					tx_key[3 + PAYMENT_ID_LEN..].clone_from_slice(&[0u8; PEDERSEN_COMMITMENT_SIZE]);
+					tx_key_cancelled_check[3 + PAYMENT_ID_LEN..]
+						.clone_from_slice(&[0u8; PEDERSEN_COMMITMENT_SIZE]);
 				}
 			}
 		}
-
 		// check if this exists. If it does, use it's current ID
 		let mut increment_tx_count = false;
 		let id = {
@@ -1625,7 +1643,6 @@ impl Wallet {
 				id
 			}
 		};
-
 		let tx_holder = TxEntry {
 			id,
 			tx_type: tx_type.clone(),

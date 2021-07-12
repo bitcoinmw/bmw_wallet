@@ -478,13 +478,23 @@ fn test_commands() {
 
 	let stop_state = Arc::new(StopState::new());
 	start_test_server(test_dir, stop_state.clone(), "3", "127.0.0.1:23493", 23499);
+
 	test_block3(test_dir, &mut wallet);
 	test_send_and_burn(test_dir, &mut wallet);
+
+	// stop servers and restart with send confirmed
+	stop_state.stop();
+	std::thread::sleep(std::time::Duration::from_millis(300));
+
+	let stop_state = Arc::new(StopState::new());
+	start_test_server(test_dir, stop_state.clone(), "4", "127.0.0.1:23493", 23500);
+
+	test_block6(test_dir, &mut wallet);
 
 	// clean up
 	stop_state.stop();
 	std::thread::sleep(std::time::Duration::from_millis(300));
-	clean_output_dir(test_dir);
+	//clean_output_dir(test_dir);
 }
 
 fn test_backup(test_dir: &str, wallet: &mut dyn WalletInst) {
@@ -683,6 +693,7 @@ fn test_claim(test_dir: &str, wallet: &mut dyn WalletInst) {
 			fluff: false,
 			is_test: true,
 			private_nonce: private_nonce.clone(),
+			payment_id: None,
 		}),
 		None,
 		None,
@@ -710,6 +721,7 @@ fn test_claim(test_dir: &str, wallet: &mut dyn WalletInst) {
 			fluff: false,
 			is_test: true,
 			private_nonce,
+			payment_id: None,
 		}),
 		None,
 		None,
@@ -937,6 +949,7 @@ fn test_send(test_dir: &str, wallet: &mut dyn WalletInst) {
 			change_outputs: 3,
 			fluff: false,
 			tx_id: None,
+			payment_id: Some(PaymentId::from_str("0000000000000000").unwrap()),
 		}),
 		None,
 	);
@@ -1097,6 +1110,7 @@ fn test_send_and_burn(test_dir: &str, wallet: &mut dyn WalletInst) {
 			change_outputs: 1,
 			fluff: true,
 			tx_id: None,
+			payment_id: Some(PaymentId::from_str("0000000000000001").unwrap()),
 		}),
 		None,
 	);
@@ -1229,9 +1243,31 @@ fn test_send_and_burn(test_dir: &str, wallet: &mut dyn WalletInst) {
 			selection_strategy_is_all: false,
 			change_outputs: 1,
 			fluff: true,
+			payment_id: Some(PaymentId::from_str("0000000000000002").unwrap()),
 		}),
 	);
 
 	let burn_response = wallet.burn(&config, "").unwrap();
 	assert!(burn_response.get_payment_id().is_ok());
+}
+
+fn test_block6(test_dir: &str, wallet: &mut dyn WalletInst) {
+	let rec_wallet_dir = format!("{}/rec_wallet", test_dir);
+	let config = build_config(
+		&rec_wallet_dir,
+		"127.0.0.1:23493",
+		None,
+		None,
+		Some(TxsArgs {
+			payment_id: None,
+			tx_id: None,
+		}),
+		None,
+		None,
+		None,
+		None,
+	);
+	let txs_response = wallet.txs(&config, "");
+	assert_eq!(txs_response.is_ok(), true);
+	assert_eq!(txs_response.unwrap().get_height().unwrap(), 6);
 }

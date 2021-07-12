@@ -116,3 +116,11 @@ impl From<ParseIntError> for Error {
 		}
 	}
 }
+
+impl From<bmw_wallet_util::grin_core::libtx::Error> for Error {
+	fn from(error: bmw_wallet_util::grin_core::libtx::Error) -> Error {
+		Error {
+			inner: Context::new(ErrorKind::InternalError(format!("{}", error))),
+		}
+	}
+}

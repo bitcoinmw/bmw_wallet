@@ -81,6 +81,11 @@ subcommands:
             short: t
             long: stored_tx
             takes_value: true
+        - payment_id:
+            help: If present, use the specified PaymentId for this transaction
+            short: p
+            long: payment_id
+            takes_value: true
   - invoice:
       about: Invoice a specified amount for payment via lightning network (Not implemented yet)
       args:
