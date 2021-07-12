@@ -799,6 +799,87 @@ mod test {
 		clean_output_dir(test_dir);
 	}
 
+	#[test]
+	fn test_txs() {
+		// basic tests for now just test that everything returns ok.
+		// TODO: expand tests
+		bmw_wallet_util::grin_util::init_test_logger();
+		global::set_local_chain_type(global::ChainTypes::UserTesting);
+		let test_dir = ".bmw_wallet_controller_txs";
+		let mut wallet = get_wallet_instance();
+		let mut config = build_config(
+			test_dir,
+			"127.0.0.1:23493",
+			None,
+			None,
+			Some(TxsArgs {
+				payment_id: None,
+				tx_id: None,
+			}),
+			None,
+			None,
+			None,
+			None,
+		);
+		config.sub_command = "txs".to_string();
+		config.pass = Some("".to_string());
+		assert!(run_command(config, &mut wallet).is_ok());
+
+		clean_output_dir(test_dir);
+	}
+
+	#[test]
+	fn test_info() {
+		// basic tests for now just test that everything returns ok.
+		// TODO: expand tests
+		bmw_wallet_util::grin_util::init_test_logger();
+		global::set_local_chain_type(global::ChainTypes::UserTesting);
+		let test_dir = ".bmw_wallet_controller_info";
+		let mut wallet = get_wallet_instance();
+		let mut config = build_config(
+			test_dir,
+			"127.0.0.1:23493",
+			None,
+			None,
+			None,
+			None,
+			None,
+			None,
+			None,
+		);
+		config.sub_command = "info".to_string();
+		config.pass = Some("".to_string());
+		assert!(run_command(config, &mut wallet).is_ok());
+
+		clean_output_dir(test_dir);
+	}
+
+	#[test]
+	fn test_outputs() {
+		// basic tests for now just test that everything returns ok.
+		// TODO: expand tests
+		bmw_wallet_util::grin_util::init_test_logger();
+		global::set_local_chain_type(global::ChainTypes::UserTesting);
+		let test_dir = ".bmw_wallet_controller_outputs";
+		let mut wallet = get_wallet_instance();
+		let mut config = build_config(
+			test_dir,
+			"127.0.0.1:23493",
+			None,
+			None,
+			None,
+			Some(OutputsArgs { show_spent: false }),
+			None,
+			None,
+			None,
+		);
+		config.sub_command = "outputs".to_string();
+		config.pass = Some("".to_string());
+		assert!(run_command(config, &mut wallet).is_ok());
+
+		clean_output_dir(test_dir);
+	}
+
 	fn get_wallet_instance() -> Wallet {
 		Wallet::new().unwrap()
 	}
