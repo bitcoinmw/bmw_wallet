@@ -79,7 +79,7 @@ jobs:
         CI_JOB: test-all
       release:
         CI_JOB: release
-        PLATFORM: win-x64
+        PLATFORM: win-x32
   steps:
     - script: |
         choco install -y llvm
