@@ -1,10 +1,8 @@
 steps:
-  - script: |
-      refreshenv && cargo test --all
+  - script: 'test_static_win32.bat'
     displayName: Cargo Test All
     condition:  and(succeeded(), contains(variables['Build.SourceBranch'], 'refs/tags/'), eq(variables['CI_JOB'], 'release' ))
-  - script: |
-      refreshenv && cargo build --release
+  - script: 'build_static_win32.bat'
     displayName: Build Release
     condition:  and(succeeded(), contains(variables['Build.SourceBranch'], 'refs/tags/'), eq(variables['CI_JOB'], 'release' ))
   - script: |
