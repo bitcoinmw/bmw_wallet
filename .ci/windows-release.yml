@@ -1,4 +1,7 @@
 steps:
+  # Note: we don't test with the 32 bit version because tests use prebuilt data files and lmdb only works on the same
+  # arch (i.e. 32 vs. 64).
+  # TODO: port tests to 32 bit for windows test.
   - script: 'cargo test --all'
     displayName: Cargo Test All
     condition:  and(succeeded(), contains(variables['Build.SourceBranch'], 'refs/tags/'), eq(variables['CI_JOB'], 'release' ))
