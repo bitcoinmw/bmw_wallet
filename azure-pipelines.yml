@@ -48,7 +48,6 @@ jobs:
         PLATFORM: linux-amd64
   steps:
     - script: |
-        ./find_openssl.sh
         sudo apt-get update -yqq
         sudo apt-get install -yqq --no-install-recommends libncursesw5-dev tor libssl-dev
       displayName: Linux Install Dependencies
@@ -97,7 +96,6 @@ jobs:
         CI_JOB: test-all
   steps:
     - script: |
-        ./find_openssl.sh
         sudo apt-get update -yqq
         sudo apt-get install -yqq --no-install-recommends libncursesw5-dev libssl-dev sshpass tor
         apt list --installed
