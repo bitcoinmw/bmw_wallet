@@ -82,7 +82,6 @@ jobs:
         PLATFORM: win-x32
   steps:
     - script: |
-        choco install -y llvm
         choco install -y tor
       displayName: Windows Install Dependencies
     - template: '.ci/test.yml'
