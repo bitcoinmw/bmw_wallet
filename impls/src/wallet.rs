@@ -355,7 +355,7 @@ impl WalletInst for Wallet {
 		}?;
 
 		// create store
-		let store = Store::new(&data_dir_name, None, Some(DB_NAME), None)?;
+		let store = Store::new(&data_dir_name, None, Some(DB_NAME), None, true)?;
 
 		// initialize some data
 		{
@@ -1308,7 +1308,7 @@ impl Wallet {
 
 	fn open_store(&mut self, config: &WalletConfig) -> Result<Store, Error> {
 		let data_dir_name = get_data_dir_name(config)?;
-		Ok(Store::new(&data_dir_name, None, Some(DB_NAME), None)?)
+		Ok(Store::new(&data_dir_name, None, Some(DB_NAME), None, true)?)
 	}
 
 	pub fn update_state_info(
